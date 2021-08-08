@@ -713,7 +713,7 @@ void test_flex_layout(void)
 	LCUI_Widget root;
 	LCUI_Widget wrapper;
 
-	LCUI_Init();
+	lcui_init();
 	wrapper = LCUIBuilder_LoadFile("test_flex_layout.xml");
 	root = LCUIWidget_GetRoot();
 	Widget_SetTitleW(root, L"test flex layout");
@@ -727,6 +727,6 @@ void test_flex_layout(void)
 	describe("root width 320px", test_flex_layout_320);
 
 #ifndef PREVIEW_MODE
-	LCUI_Destroy();
+	lcui_destroy();
 #endif
 }

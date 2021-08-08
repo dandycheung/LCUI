@@ -4,7 +4,7 @@
 int main(int argc, char **argv)
 {
 	logger_set_level(LOGGER_LEVEL_INFO);
-	LCUI_Init();
+	lcui_init();
 	test_block_layout();
-	return LCUI_Main();
+	return lcui_main();
 }

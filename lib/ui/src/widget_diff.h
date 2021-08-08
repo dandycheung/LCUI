@@ -40,8 +40,8 @@ typedef struct LCUI_WidgetStyleDiffRec_ {
 	float height;
 	float opacity;
 	LCUI_BOOL visible;
-	LCUI_Rect2F margin;
-	LCUI_Rect2F padding;
+	pd_rect_t2F margin;
+	pd_rect_t2F padding;
 	LCUI_StyleValue position;
 	pd_border_style_t border;
 	pd_boxshadow_style_t shadow;

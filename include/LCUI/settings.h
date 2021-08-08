@@ -33,22 +33,22 @@
 
 LCUI_BEGIN_HEADER
 
-typedef struct LCUI_SettingsRec_ {
+typedef struct lcui_settings_t {
 	int frame_rate_cap;
 	int parallel_rendering_threads;
 	LCUI_BOOL record_profile;
 	LCUI_BOOL fps_meter;
 	LCUI_BOOL paint_flashing;
-} LCUI_SettingsRec, *LCUI_Settings;
+} lcui_settings_t;
 
 /* Initialize settings with the current global settings. */
-LCUI_API void Settings_Init(LCUI_Settings settings);
+LCUI_API void lcui_get_settings(lcui_settings_t *settings);
 
 /* Update global settings with the given input. */
-LCUI_API void LCUI_ApplySettings(LCUI_Settings settings);
+LCUI_API void lcui_apply_settings(lcui_settings_t *settings);
 
 /* Reset global settings to their defaults. */
-LCUI_API void LCUI_ResetSettings(void);
+LCUI_API void lcui_reset_settings(void);
 
 LCUI_END_HEADER
 

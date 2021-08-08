@@ -116,9 +116,9 @@ static void check_widget_opactiy(void)
 
 void test_widget_opacity(void)
 {
-	LCUI_Init();
+	lcui_init();
 
 	build();
 	describe("check widget opacity", check_widget_opactiy);
-	LCUI_Destroy();
+	lcui_destroy();
 }

@@ -38,7 +38,7 @@ target("lcui")
         "lcui-ui-widgets",
         "lcui-ui-anchor",
         "lcui-ui-builder",
-        "lcui-platform",
+        "lcui-app",
         "lcui-text",
         "lcui-timer",
         "lcui-worker"
@@ -55,7 +55,7 @@ target("lcui")
         os.cp("$(projectdir)/lib/ui-widgets/include/*.h", "$(projectdir)/include/LCUI/ui")
         os.cp("$(projectdir)/lib/ui-anchor/include/*.h", "$(projectdir)/include/LCUI/ui")
         os.cp("$(projectdir)/lib/ui-builder/include/*.h", "$(projectdir)/include/LCUI/ui")
-        os.cp("$(projectdir)/lib/platform/include/*.h", "$(projectdir)/include/LCUI/")
+        os.cp("$(projectdir)/lib/app/include/*.h", "$(projectdir)/include/LCUI/")
         os.cp("$(projectdir)/lib/text/include/*.h", "$(projectdir)/include/LCUI/")
         os.cp("$(projectdir)/lib/timer/include/*.h", "$(projectdir)/include/LCUI/")
         os.cp("$(projectdir)/lib/worker/include/*.h", "$(projectdir)/include/LCUI/")

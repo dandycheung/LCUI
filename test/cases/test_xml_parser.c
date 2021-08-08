@@ -36,14 +36,14 @@ void test_xml_parser(void)
 {
 	LCUI_Widget root, pack;
 
-	LCUI_Init();
+	lcui_init();
 	LCUIDisplay_SetSize(960, 680);
 	root = LCUIWidget_GetRoot();
 	it_b("load XML file",
 	     (pack = LCUIBuilder_LoadFile("test_xml_parser.xml")) != NULL,
 	     TRUE);
 	if (!pack) {
-		LCUI_Destroy();
+		lcui_destroy();
 		return;
 	}
 	Widget_UpdateStyle(root, TRUE);
@@ -53,5 +53,5 @@ void test_xml_parser(void)
 	describe("check widget attribute", check_widget_attribute);
 	describe("check widget loaded from nested xml",
 		 check_widget_loaded_from_nested_xml);
-	LCUI_Destroy();
+	lcui_destroy();
 }

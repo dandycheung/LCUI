@@ -5,5 +5,5 @@ int main(int argc, char **argv)
 {
 	logger_set_level(LOGGER_LEVEL_INFO);
 	test_flex_layout();
-	return LCUI_Main();
+	return lcui_main();
 }

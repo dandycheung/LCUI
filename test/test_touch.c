@@ -20,7 +20,7 @@ static list_t touch_bindings;
 
 static void OnTouchWidget(LCUI_Widget w, LCUI_WidgetEvent e, void *arg)
 {
-	LCUI_TouchPoint point;
+	touch_point_t *point;
 	TouchPointBinding binding;
 
 	if (e->touch.n_points == 0) {
@@ -49,12 +49,12 @@ static void OnTouchWidget(LCUI_Widget w, LCUI_WidgetEvent e, void *arg)
 	}
 }
 
-static void OnTouch(LCUI_SysEvent e, void *arg)
+static void OnTouch(app_event_t *e, void *arg)
 {
 	int i;
 	LCUI_Widget w;
 	list_node_t *node;
-	LCUI_TouchPoint point;
+	touch_point_t *point;
 	pd_color_t bgcolor = RGB(255, 0, 0);
 
 	for (i = 0; i < e->touch.n_points; ++i) {
@@ -93,8 +93,8 @@ static void OnTouch(LCUI_SysEvent e, void *arg)
 
 int main(int argc, char **argv)
 {
-	LCUI_Init();
+	lcui_init();
 	list_create(&touch_bindings);
-	LCUI_BindEvent(LCUI_TOUCH, OnTouch, NULL, NULL);
-	return LCUI_Main();
+	LCUI_BindEvent(APP_EVENT_TOUCH, OnTouch, NULL, NULL);
+	return lcui_main();
 }

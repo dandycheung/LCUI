@@ -35,7 +35,6 @@
 #include <LCUI/gui/widget.h>
 #include <LCUI/gui/widget/textcaret.h>
 #include <LCUI/gui/css_parser.h>
-#include <LCUI/ime.h>
 
 typedef struct LCUI_TextCaretTaskRec_ {
 	LCUI_BOOL active;
@@ -77,7 +76,7 @@ void TextCaret_Refresh(LCUI_Widget widget)
 	}
 	lcui_reset_timer(caret->timer_id, caret->blink_interval);
 	Widget_GetOffset(widget, LCUIWidget_GetRoot(), &x, &y);
-	LCUIIME_SetCaret((int)x, (int)y);
+	ime_set_caret((int)x, (int)y);
 	Widget_Show(widget);
 }
 

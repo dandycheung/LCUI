@@ -114,11 +114,11 @@ void test_css_parser(void)
 {
 	LCUI_Widget root, box, btn;
 
-	LCUI_Init();
+	lcui_init();
 	box = LCUIBuilder_LoadFile("test_css_parser.xml");
 	it_b("should successfully load test_css_parser.xml", !!box, TRUE);
 	if (!box) {
-		LCUI_Destroy();
+		lcui_destroy();
 		return;
 	}
 	root = LCUIWidget_GetRoot();
@@ -140,5 +140,5 @@ void test_css_parser(void)
 	describe("parse 'flex: 100px;'", test_parse_flex_100px);
 	describe("parse 'flex: 1 100px;'", test_parse_flex_1_100px);
 	describe("parse 'flex: 0 0 100px;'", test_parse_flex_0_0_100px);
-	LCUI_Destroy();
+	lcui_destroy();
 }

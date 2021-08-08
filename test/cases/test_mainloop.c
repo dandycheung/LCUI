@@ -14,7 +14,7 @@ static void OnRefreshScreen(void *arg)
 
 static void OnQuit(void *arg)
 {
-	LCUI_Quit();
+	lcui_quit();
 }
 
 static void OnBtnClick(LCUI_Widget w, LCUI_WidgetEvent e, void *arg)
@@ -31,13 +31,13 @@ static void OnTriggerBtnClick(void *arg)
 {
 	LCUI_SysEventRec e;
 
-	e.type = LCUI_MOUSEDOWN;
-	e.button.button = LCUI_KEY_LEFTBUTTON;
+	e.type = APP_EVENT_MOUSEDOWN;
+	e.button.button = MOUSE_BUTTON_LEFT;
 	e.button.x = 5;
 	e.button.y = 5;
 	LCUI_TriggerEvent(&e, NULL);
 
-	e.type = LCUI_MOUSEUP;
+	e.type = APP_EVENT_MOUSEUP;
 	LCUI_TriggerEvent(&e, NULL);
 }
 
@@ -63,7 +63,7 @@ void test_mainloop(void)
 	LCUI_Widget root, btn;
 	LCUI_BOOL exited = FALSE;
 
-	LCUI_Init();
+	lcui_init();
 	btn = LCUIWidget_New("button");
 	root = LCUIWidget_GetRoot();
 	Button_SetText(btn, "button");
@@ -73,7 +73,7 @@ void test_mainloop(void)
 	LCUIThread_Create(&tid, ObserverThread, &exited);
 	/* Trigger the click event after the first frame is updated */
 	lcui_set_timeout(50, OnTriggerBtnClick, btn);
-	LCUI_Main();
+	lcui_main();
 	exited = TRUE;
 	LCUIThread_Join(tid, NULL);
 }

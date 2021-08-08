@@ -31,11 +31,11 @@ int main(void)
 {
 	LCUI_Widget btn_plus, btn_minus;
 
-	LCUI_Init();
+	lcui_init();
 	build();
 	btn_plus = LCUIWidget_GetById("btn-plus");
 	btn_minus = LCUIWidget_GetById("btn-minus");
 	Widget_BindEvent(btn_plus, "click", OnOpacityPlus, NULL, NULL);
 	Widget_BindEvent(btn_minus, "click", OnOpacityMinus, NULL, NULL);
-	return LCUI_Main();
+	return lcui_main();
 }

@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
 	LCUI_Widget root, pack, btn;
 
-	LCUI_Init();
+	lcui_init();
 	root = LCUIWidget_GetRoot();
 	pack = LCUIBuilder_LoadFile("helloworld.xml");
 	if (!pack) {
@@ -29,5 +29,5 @@ int main(int argc, char **argv)
 	Widget_Unwrap(pack);
 	btn = LCUIWidget_GetById("btn");
 	Widget_BindEvent(btn, "click", OnBtnClick, NULL, NULL);
-	return LCUI_Main();
+	return lcui_main();
 }

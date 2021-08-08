@@ -3,12 +3,12 @@
 
 int main(void)
 {
-	LCUI_Init();
+	lcui_init();
 
 	build();
 	lcui_set_timeout(2000, test_textview_set_text, NULL);
 	lcui_set_timeout(4000, test_textview_set_short_content_css, NULL);
 	lcui_set_timeout(6000, test_textview_set_long_content_css, NULL);
 
-	return LCUI_Main();
+	return lcui_main();
 }

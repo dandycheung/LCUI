@@ -8,14 +8,14 @@ int main(void)
 	int ret = 0;
 	LCUI_Widget root, box;
 
-	LCUI_Init();
+	lcui_init();
 	box = LCUIBuilder_LoadFile("test_box_shadow.xml");
 	if (!box) {
-		LCUI_Destroy();
+		lcui_destroy();
 		return ret;
 	}
 	root = LCUIWidget_GetRoot();
 	Widget_Append(root, box);
 	Widget_Unwrap(box);
-	return LCUI_Main();
+	return lcui_main();
 }

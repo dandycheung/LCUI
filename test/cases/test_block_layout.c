@@ -741,7 +741,7 @@ void test_block_layout(void)
 	LCUI_Widget root;
 	LCUI_Widget wrapper;
 
-	LCUI_Init();
+	lcui_init();
 	wrapper = LCUIBuilder_LoadFile("test_block_layout.xml");
 	root = LCUIWidget_GetRoot();
 	Widget_Append(root, wrapper);
@@ -753,6 +753,6 @@ void test_block_layout(void)
 	describe("root width 320px", test_block_layout_320);
 
 #ifndef PREVIEW_MODE
-	LCUI_Destroy();
+	lcui_destroy();
 #endif
 }

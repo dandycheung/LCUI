@@ -259,21 +259,21 @@ static void ScrollBarThumb_OnMouseMove(LCUI_Widget thumb, LCUI_WidgetEvent e,
 	target = scrollbar->target;
 	if (scrollbar->direction == LCUI_SCROLLBAR_HORIZONTAL) {
 		size = thumb->parent->box.content.width - thumb->width;
-		x = scrollbar->thumb_x + e->motion.x - scrollbar->mouse_x;
+		x = scrollbar->thumb_x + e->mouse.x - scrollbar->mouse_x;
 		x = y_max(0, y_min(x, size));
 		y = 0;
 		layer_pos = (scrollbar->target->box.outer.width -
 			     box->box.content.width) *
-			    y_max(0, y_min(x / size, 1.0));
+			    y_max(0, y_min(x / size, 1.f));
 		Widget_SetStyle(target, key_left, -layer_pos, px);
 	} else {
 		size = thumb->parent->box.content.height - thumb->height;
 		x = 0;
-		y = scrollbar->thumb_y + e->motion.y - scrollbar->mouse_y;
+		y = scrollbar->thumb_y + e->mouse.y - scrollbar->mouse_y;
 		y = y_max(0, y_min(y, size));
 		layer_pos = (scrollbar->target->box.outer.height -
 			     box->box.content.height) *
-			    y_max(0, y_min(y / size, 1.0));
+			    y_max(0, y_min(y / size, 1.f));
 		Widget_SetStyle(target, key_top, -layer_pos, px);
 	}
 	if (scrollbar->pos != y_iround(layer_pos)) {
@@ -310,8 +310,8 @@ static void ScrollBarThumb_OnMouseDown(LCUI_Widget thumb, LCUI_WidgetEvent e,
 	}
 	scrollbar->thumb_x = thumb->x;
 	scrollbar->thumb_y = thumb->y;
-	scrollbar->mouse_x = e->motion.x;
-	scrollbar->mouse_y = e->motion.y;
+	scrollbar->mouse_x = e->mouse.x;
+	scrollbar->mouse_y = e->mouse.y;
 	scrollbar->is_dragging = TRUE;
 	Widget_SetMouseCapture(thumb);
 	Widget_BindEvent(thumb, "mousemove", ScrollBarThumb_OnMouseMove, w,
@@ -438,7 +438,7 @@ static void ScrollBox_OnWheel(LCUI_Widget box, LCUI_WidgetEvent e, void *arg)
 		return;
 	}
 	pos = ScrollBar_GetPosition(w);
-	if (e->wheel.delta > 0) {
+	if (e->wheel.delta_y > 0) {
 		new_pos = pos - scrollbar->scroll_step;
 	} else {
 		new_pos = pos + scrollbar->scroll_step;
@@ -454,11 +454,12 @@ static void ScrollBox_OnWheel(LCUI_Widget box, LCUI_WidgetEvent e, void *arg)
 static void ScrollBox_OnTouch(LCUI_Widget box, LCUI_WidgetEvent e, void *arg)
 {
 	uint_t time_delta;
-	int i, pos, distance;
+	int pos, distance;
+	unsigned i;
 
 	LCUI_Widget w = e->data;
 	LCUI_ScrollBar scrollbar;
-	LCUI_TouchPoint point;
+	touch_point_t *point;
 
 	if (e->touch.n_points < 1) {
 		return;

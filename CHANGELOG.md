@@ -200,7 +200,7 @@
 ### Performance Improvements
 
 * **css:** change the stylesheet store struct to reduce memory usage ([9cc2957](https://github.com/lc-soft/LCUI/commit/9cc2957))
-* **css:** reduce duplicate memory alloc for DictType ([01fd3f6](https://github.com/lc-soft/LCUI/commit/01fd3f6))
+* **css:** reduce duplicate memory alloc for dict_type_t ([01fd3f6](https://github.com/lc-soft/LCUI/commit/01fd3f6))
 * **gui:** improve widget destruction performance ([87aff87](https://github.com/lc-soft/LCUI/commit/87aff87))
 * **gui:** improve Widget_Empty() performance ([1654963](https://github.com/lc-soft/LCUI/commit/1654963))
 * **gui:** reduce memory usage for widget style sheets ([3790fbd](https://github.com/lc-soft/LCUI/commit/3790fbd))

@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LCUI_PAINTER_H
-#define LCUI_PAINTER_H
+#ifndef APP_EVENT_PAINTER_H
+#define APP_EVENT_PAINTER_H
 
 LCUI_API pd_paint_context_t* pd_painter_begin(pd_canvas_t *canvas, pd_rect_t *rect);
 

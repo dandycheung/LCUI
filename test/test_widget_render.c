@@ -14,7 +14,7 @@ int main(void)
 	pd_color_t bgcolor = RGB(242, 249, 252);
 	pd_color_t bdcolor = RGB(201, 230, 242);
 
-	LCUI_Init();
+	lcui_init();
 
 	root = LCUIWidget_New(NULL);
 	box = LCUIWidget_New(NULL);
@@ -53,6 +53,6 @@ int main(void)
 	ret = LCUI_WritePNGFile("test_widget_render.png", &canvas);
 	pd_canvas_free(&canvas);
 
-	LCUI_Destroy();
+	lcui_destroy();
 	return ret;
 }

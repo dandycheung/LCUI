@@ -49,10 +49,10 @@
 #include <LCUI/image.h>
 #endif
 
-typedef struct LCUI_RectGroupRec_ {
+typedef struct pd_rect_tGroupRec_ {
 	LCUI_Widget widget;
 	list_t rects;
-} LCUI_RectGroupRec, *LCUI_RectGroup;
+} pd_rect_tGroupRec, *pd_rect_tGroup;
 
 typedef struct LCUI_WidgetRendererRec_ {
 	/* target widget position, it relative to root canvas */
@@ -313,13 +313,13 @@ size_t Widget_GetInvalidArea(LCUI_Widget w, list_t *rects)
 
 static int OnCompareGroup(void *data, const void *keydata)
 {
-	LCUI_RectGroup group = data;
+	pd_rect_tGroup group = data;
 	return (int)((char *)group->widget - (char *)keydata);
 }
 
 static void OnDestroyGroup(void *data)
 {
-	LCUI_RectGroup group = data;
+	pd_rect_tGroup group = data;
 	RectList_Clear(&group->rects);
 	group->widget = NULL;
 }

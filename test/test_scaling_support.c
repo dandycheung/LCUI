@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 {
 	LCUI_Widget root, pack;
 
-	LCUI_Init();
+	lcui_init();
 	root = LCUIWidget_GetRoot();
 	pack = LCUIBuilder_LoadFile("test_scaling_support.xml");
 	if (!pack) {
@@ -71,5 +71,5 @@ int main(int argc, char **argv)
 	Widget_Append(root, pack);
 	Widget_Unwrap(pack);
 	InitButtons();
-	return LCUI_Main();
+	return lcui_main();
 }

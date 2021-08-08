@@ -10,7 +10,7 @@ void test_textedit(void)
 	LCUI_Object value;
 	wchar_t wcs[64];
 
-	LCUI_Init();
+	lcui_init();
 
 	w = LCUIWidget_New("textedit");
 
@@ -83,5 +83,5 @@ void test_textedit(void)
 	Widget_Destroy(w);
 	Object_Delete(value);
 
-	LCUI_Destroy();
+	lcui_destroy();
 }

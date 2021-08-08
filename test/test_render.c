@@ -138,7 +138,7 @@ int main(void)
 	int64_t t;
 
 	logger_set_level(LOGGER_LEVEL_WARNING);
-	LCUI_Init();
+	lcui_init();
 	LCUIDisplay_SetSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	InitBackground();
 	InitModal();

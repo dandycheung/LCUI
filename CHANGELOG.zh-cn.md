@@ -188,7 +188,7 @@
 ### 性能改进
 
 * **css:** 更改样式表存储结构以减少内存占用 ([9cc2957](https://github.com/lc-soft/LCUI/commit/9cc2957))
-* **css:** 减少重复的 DictType 内存分配 ([01fd3f6](https://github.com/lc-soft/LCUI/commit/01fd3f6))
+* **css:** 减少重复的 dict_type_t 内存分配 ([01fd3f6](https://github.com/lc-soft/LCUI/commit/01fd3f6))
 * **gui:** 改进部件销毁性能 ([87aff87](https://github.com/lc-soft/LCUI/commit/87aff87))
 * **gui:** 改进 Widget_Empty() 性能 ([1654963](https://github.com/lc-soft/LCUI/commit/1654963))
 * **gui:** 减少部件的样式表的内存占用 ([3790fbd](https://github.com/lc-soft/LCUI/commit/3790fbd))

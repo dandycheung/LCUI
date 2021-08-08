@@ -31,8 +31,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI.h>
 #include <LCUI/font.h>
 #include <LCUI/input.h>
 #include <LCUI/gui/widget.h>
@@ -41,7 +40,6 @@
 #include <LCUI/gui/css_fontstyle.h>
 #include <LCUI/gui/widget/textedit.h>
 #include <LCUI/gui/widget/textcaret.h>
-#include <LCUI/ime.h>
 
 #define TEXT_BLOCK_SIZE 512
 #define DEFAULT_WIDTH 176.0f
@@ -728,13 +726,13 @@ static void TextEdit_OnKeyDown(LCUI_Widget widget, LCUI_WidgetEvent e,
 	cols = TextLayer_GetRowTextLength(edit->layer, cur_row);
 	e->cancel_bubble = TRUE;
 	switch (e->key.code) {
-	case LCUI_KEY_HOME:
+	case KEY_HOME:
 		cur_col = 0;
 		break;
-	case LCUI_KEY_END:
+	case KEY_END:
 		cur_col = cols;
 		break;
-	case LCUI_KEY_LEFT:
+	case KEY_LEFT:
 		if (cur_col > 0) {
 			--cur_col;
 		} else if (cur_row > 0) {
@@ -743,7 +741,7 @@ static void TextEdit_OnKeyDown(LCUI_Widget widget, LCUI_WidgetEvent e,
 			    TextLayer_GetRowTextLength(edit->layer, cur_row);
 		}
 		break;
-	case LCUI_KEY_RIGHT:
+	case KEY_RIGHT:
 		if (cur_col < cols) {
 			++cur_col;
 		} else if (cur_row < rows - 1) {
@@ -751,20 +749,20 @@ static void TextEdit_OnKeyDown(LCUI_Widget widget, LCUI_WidgetEvent e,
 			cur_col = 0;
 		}
 		break;
-	case LCUI_KEY_UP:
+	case KEY_UP:
 		if (cur_row > 0) {
 			--cur_row;
 		}
 		break;
-	case LCUI_KEY_DOWN:
+	case KEY_DOWN:
 		if (cur_row < rows - 1) {
 			++cur_row;
 		}
 		break;
-	case LCUI_KEY_BACKSPACE:
+	case KEY_BACKSPACE:
 		TextEdit_TextBackspace(widget, 1);
 		return;
-	case LCUI_KEY_DELETE:
+	case KEY_DELETE:
 		TextEdit_TextDelete(widget, 1);
 		return;
 	default:
@@ -837,8 +835,8 @@ static void TextEdit_OnMouseMove(LCUI_Widget w, LCUI_WidgetEvent e, void *arg)
 	}
 	scale = LCUIMetrics_GetScale();
 	Widget_GetOffset(w, NULL, &offset_x, &offset_y);
-	x = y_iround((e->motion.x - offset_x - w->padding.left) * scale);
-	y = y_iround((e->motion.y - offset_y - w->padding.top) * scale);
+	x = y_iround((e->mouse.x - offset_x - w->padding.left) * scale);
+	y = y_iround((e->mouse.y - offset_y - w->padding.top) * scale);
 	TextLayer_SetCaretPosByPixelPos(edit->layer, x, y);
 	TextEdit_UpdateCaret(w);
 }
@@ -857,8 +855,8 @@ static void TextEdit_OnMouseDown(LCUI_Widget w, LCUI_WidgetEvent e, void *arg)
 	LCUI_TextEdit edit = GetData(w);
 
 	Widget_GetOffset(w, NULL, &offset_x, &offset_y);
-	x = y_iround((e->motion.x - offset_x - w->padding.left) * scale);
-	y = y_iround((e->motion.y - offset_y - w->padding.top) * scale);
+	x = y_iround((e->mouse.x - offset_x - w->padding.left) * scale);
+	y = y_iround((e->mouse.y - offset_y - w->padding.top) * scale);
 	TextLayer_SetCaretPosByPixelPos(edit->layer, x, y);
 	TextEdit_UpdateCaret(w);
 	Widget_SetMouseCapture(w);

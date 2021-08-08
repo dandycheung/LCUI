@@ -32,11 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI.h>
 #include <LCUI/gui/metrics.h>
 #include <LCUI/gui/widget.h>
-#include <LCUI/ime.h>
 #include <LCUI/input.h>
 #include <LCUI/cursor.h>
 #include <LCUI/thread.h>
@@ -93,7 +91,6 @@ static struct LCUIWidgetEvnetModule {
 	LCUI_Widget mouse_capturer;     /**< 占用鼠标的部件 */
 	list_t touch_capturers;     /**< 触点占用记录 */
 	LCUI_Widget targets[WST_TOTAL]; /**< 相关的部件 */
-	list_t events;              /**< 已绑定的事件 */
 	list_t event_mappings;	/**< 事件标识号和名称映射记录列表  */
 	rbtree_t event_records;		/**< 当前正执行的事件的记录 */
 	rbtree_t event_names;		/**< 事件名称表，以标识号作为索引 */
@@ -272,7 +269,7 @@ static int CopyWidgetEvent(LCUI_WidgetEvent dst, const LCUI_WidgetEvent src)
 			break;
 		}
 		n = dst->touch.n_points;
-		size = sizeof(LCUI_TouchPointRec) * n;
+		size = sizeof(touch_point_t) * n;
 		dst->touch.points = malloc(size);
 		if (!dst->touch.points) {
 			return -ENOMEM;
@@ -553,14 +550,14 @@ static int Widget_TriggerEventEx(LCUI_Widget widget, LCUI_WidgetEventPack pack)
 		case LCUI_WEVENT_CLICK:
 		case LCUI_WEVENT_MOUSEDOWN:
 		case LCUI_WEVENT_MOUSEUP:
-			pointer_x = e->button.x;
-			pointer_y = e->button.y;
+			pointer_x = e->mouse.x;
+			pointer_y = e->mouse.y;
 			break;
 		case LCUI_WEVENT_MOUSEMOVE:
 		case LCUI_WEVENT_MOUSEOVER:
 		case LCUI_WEVENT_MOUSEOUT:
-			pointer_x = e->motion.x;
-			pointer_y = e->motion.y;
+			pointer_x = e->mouse.x;
+			pointer_y = e->mouse.y;
 			break;
 		default:
 			is_pointer_event = FALSE;
@@ -620,7 +617,7 @@ LCUI_BOOL Widget_PostEvent(LCUI_Widget widget, LCUI_WidgetEvent ev, void *data,
 	CopyWidgetEvent(&pack->event, ev);
 	Widget_AddEventRecord(widget, pack);
 	/* 把任务扔给当前跑主循环的线程 */
-	if (!LCUI_PostTask(&task)) {
+	if (!lcui_post_task(&task)) {
 		LCUITask_Destroy(&task);
 		return FALSE;
 	}
@@ -906,7 +903,7 @@ int LCUIWidget_SetFocus(LCUI_Widget widget)
 }
 
 /** 响应系统的鼠标移动事件，向目标部件投递相关鼠标事件 */
-static void OnMouseEvent(LCUI_SysEvent sys_ev, void *arg)
+static void OnMouseEvent(app_event_t *sys_ev, void *arg)
 {
 	float scale;
 	pd_pos_t pos;
@@ -936,19 +933,19 @@ static void OnMouseEvent(LCUI_SysEvent sys_ev, void *arg)
 	ev.target = target;
 	ev.cancel_bubble = FALSE;
 	switch (sys_ev->type) {
-	case LCUI_MOUSEDOWN:
+	case APP_EVENT_MOUSEDOWN:
 		ev.type = LCUI_WEVENT_MOUSEDOWN;
-		ev.button.x = pos.x;
-		ev.button.y = pos.y;
-		ev.button.button = sys_ev->button.button;
+		ev.mouse.x = pos.x;
+		ev.mouse.y = pos.y;
+		ev.mouse.button = sys_ev->mouse.button;
 		Widget_TriggerEvent(target, &ev, NULL);
 		self.click.interval = DBLCLICK_INTERVAL;
-		if (ev.button.button == LCUI_KEY_LEFTBUTTON &&
+		if (ev.mouse.button == MOUSE_BUTTON_LEFT &&
 		    self.click.widget == target) {
 			int delta;
 			delta = (int)get_time_delta(self.click.time);
 			self.click.interval = delta;
-		} else if (ev.button.button == LCUI_KEY_LEFTBUTTON &&
+		} else if (ev.mouse.button == MOUSE_BUTTON_LEFT &&
 			   self.click.widget != target) {
 			self.click.x = pos.x;
 			self.click.y = pos.y;
@@ -958,14 +955,14 @@ static void OnMouseEvent(LCUI_SysEvent sys_ev, void *arg)
 		Widget_OnMouseDownEvent(target);
 		LCUIWidget_SetFocus(target);
 		break;
-	case LCUI_MOUSEUP:
+	case APP_EVENT_MOUSEUP:
 		ev.type = LCUI_WEVENT_MOUSEUP;
-		ev.button.x = pos.x;
-		ev.button.y = pos.y;
-		ev.button.button = sys_ev->button.button;
+		ev.mouse.x = pos.x;
+		ev.mouse.y = pos.y;
+		ev.mouse.button = sys_ev->mouse.button;
 		Widget_TriggerEvent(target, &ev, NULL);
 		if (self.targets[WST_ACTIVE] != target ||
-		    ev.button.button != LCUI_KEY_LEFTBUTTON) {
+		    ev.mouse.button != MOUSE_BUTTON_LEFT) {
 			self.click.x = 0;
 			self.click.y = 0;
 			self.click.time = 0;
@@ -993,10 +990,10 @@ static void OnMouseEvent(LCUI_SysEvent sys_ev, void *arg)
 		}
 		Widget_OnMouseDownEvent(NULL);
 		break;
-	case LCUI_MOUSEMOVE:
+	case APP_EVENT_MOUSEMOVE:
 		ev.type = LCUI_WEVENT_MOUSEMOVE;
-		ev.motion.x = pos.x;
-		ev.motion.y = pos.y;
+		ev.mouse.x = pos.x;
+		ev.mouse.y = pos.y;
 		if (abs(self.click.x - pos.x) >= 8 ||
 		    abs(self.click.y - pos.y) >= 8) {
 			self.click.time = 0;
@@ -1004,11 +1001,9 @@ static void OnMouseEvent(LCUI_SysEvent sys_ev, void *arg)
 		}
 		Widget_TriggerEvent(target, &ev, NULL);
 		break;
-	case LCUI_MOUSEWHEEL:
+	case APP_EVENT_WHEEL:
 		ev.type = LCUI_WEVENT_MOUSEWHEEL;
-		ev.wheel.x = pos.x;
-		ev.wheel.y = pos.y;
-		ev.wheel.delta = sys_ev->wheel.delta;
+		ev.wheel = sys_ev->wheel;
 		Widget_TriggerEvent(target, &ev, NULL);
 	default:
 		return;
@@ -1016,20 +1011,20 @@ static void OnMouseEvent(LCUI_SysEvent sys_ev, void *arg)
 	Widget_OnMouseOverEvent(target);
 }
 
-static void OnKeyboardEvent(LCUI_SysEvent e, void *arg)
+static void OnKeyboardEvent(app_event_t *e, void *arg)
 {
 	LCUI_WidgetEventRec ev = { 0 };
 	if (!self.targets[WST_FOCUS]) {
 		return;
 	}
 	switch (e->type) {
-	case LCUI_KEYDOWN:
+	case APP_EVENT_KEYDOWN:
 		ev.type = LCUI_WEVENT_KEYDOWN;
 		break;
-	case LCUI_KEYUP:
+	case APP_EVENT_KEYUP:
 		ev.type = LCUI_WEVENT_KEYUP;
 		break;
-	case LCUI_KEYPRESS:
+	case APP_EVENT_KEYPRESS:
 		ev.type = LCUI_WEVENT_KEYPRESS;
 		break;
 	default:
@@ -1042,7 +1037,7 @@ static void OnKeyboardEvent(LCUI_SysEvent e, void *arg)
 }
 
 /** 响应输入法的输入 */
-static void OnTextInput(LCUI_SysEvent e, void *arg)
+static void OnTextInput(app_event_t *e, void *arg)
 {
 	LCUI_WidgetEventRec ev = { 0 };
 	LCUI_Widget target = self.targets[WST_FOCUS];
@@ -1064,17 +1059,17 @@ static void OnTextInput(LCUI_SysEvent e, void *arg)
 	ev.text.length = 0;
 }
 
-static void ConvertTouchPoint(LCUI_TouchPoint point)
+static void ConvertTouchPoint(touch_point_t *point)
 {
 	float scale;
 	switch (point->state) {
-	case LCUI_TOUCHDOWN:
+	case APP_EVENT_TOUCHDOWN:
 		point->state = LCUI_WEVENT_TOUCHDOWN;
 		break;
-	case LCUI_TOUCHUP:
+	case APP_EVENT_TOUCHUP:
 		point->state = LCUI_WEVENT_TOUCHUP;
 		break;
-	case LCUI_TOUCHMOVE:
+	case APP_EVENT_TOUCHMOVE:
 		point->state = LCUI_WEVENT_TOUCHMOVE;
 		break;
 	default:
@@ -1086,7 +1081,7 @@ static void ConvertTouchPoint(LCUI_TouchPoint point)
 }
 
 /** 分发触控事件给对应的部件 */
-static int DispatchTouchEvent(list_t *capturers, LCUI_TouchPoint points,
+static int DispatchTouchEvent(list_t *capturers, touch_point_t *points,
 			      int n_points)
 {
 	int i, count;
@@ -1099,7 +1094,7 @@ static int DispatchTouchEvent(list_t *capturers, LCUI_TouchPoint points,
 	scale = LCUIMetrics_GetScale();
 	ev.type = LCUI_WEVENT_TOUCH;
 	ev.cancel_bubble = FALSE;
-	ev.touch.points = NEW(LCUI_TouchPointRec, n_points);
+	ev.touch.points = NEW(touch_point_t, n_points);
 	/* 先将各个触点按命中的部件进行分组 */
 	for (i = 0; i < n_points; ++i) {
 		target = Widget_At(root, y_iround(points[i].x / scale),
@@ -1124,7 +1119,7 @@ static int DispatchTouchEvent(list_t *capturers, LCUI_TouchPoint points,
 		TouchCapturer tc = node->data;
 		for (i = 0; i < n_points; ++i) {
 			for (list_each(ptnode, &tc->points)) {
-				LCUI_TouchPoint point;
+				touch_point_t *point;
 				if (points[i].id != *(int *)ptnode->data) {
 					continue;
 				}
@@ -1146,11 +1141,11 @@ static int DispatchTouchEvent(list_t *capturers, LCUI_TouchPoint points,
 }
 
 /** 响应系统触控事件 */
-static void OnTouch(LCUI_SysEvent sys_ev, void *arg)
+static void OnTouch(app_event_t *sys_ev, void *arg)
 {
 	int i, n;
 	list_t capturers;
-	LCUI_TouchPoint points;
+	touch_point_t *points;
 	list_node_t *node, *ptnode;
 
 	n = sys_ev->touch.n_points;
@@ -1249,13 +1244,6 @@ void Widget_DestroyEventTrigger(LCUI_Widget w)
 	}
 }
 
-static void BindSysEvent(int e, LCUI_SysEventFunc func)
-{
-	int *id = malloc(sizeof(int));
-	*id = LCUI_BindEvent(e, func, NULL, NULL);
-	list_append(&self.events, id);
-}
-
 void LCUIWidget_InitEvent(void)
 {
 	int i, n;
@@ -1294,7 +1282,6 @@ void LCUIWidget_InitEvent(void)
 	LCUIMutex_Init(&self.mutex);
 	rbtree_init(&self.event_names);
 	rbtree_init(&self.event_records);
-	list_create(&self.events);
 	list_create(&self.event_mappings);
 	self.targets[WST_ACTIVE] = NULL;
 	self.targets[WST_HOVER] = NULL;
@@ -1312,15 +1299,15 @@ void LCUIWidget_InitEvent(void)
 	for (i = 0; i < n; ++i) {
 		LCUIWidget_SetEventName(mappings[i].id, mappings[i].name);
 	}
-	BindSysEvent(LCUI_MOUSEWHEEL, OnMouseEvent);
-	BindSysEvent(LCUI_MOUSEDOWN, OnMouseEvent);
-	BindSysEvent(LCUI_MOUSEMOVE, OnMouseEvent);
-	BindSysEvent(LCUI_MOUSEUP, OnMouseEvent);
-	BindSysEvent(LCUI_KEYPRESS, OnKeyboardEvent);
-	BindSysEvent(LCUI_KEYDOWN, OnKeyboardEvent);
-	BindSysEvent(LCUI_KEYUP, OnKeyboardEvent);
-	BindSysEvent(LCUI_TOUCH, OnTouch);
-	BindSysEvent(LCUI_TEXTINPUT, OnTextInput);
+	app_on_event(APP_EVENT_WHEEL, OnMouseEvent, NULL);
+	app_on_event(APP_EVENT_MOUSEDOWN, OnMouseEvent, NULL);
+	app_on_event(APP_EVENT_MOUSEMOVE, OnMouseEvent, NULL);
+	app_on_event(APP_EVENT_MOUSEUP, OnMouseEvent, NULL);
+	app_on_event(APP_EVENT_KEYPRESS, OnKeyboardEvent, NULL);
+	app_on_event(APP_EVENT_KEYDOWN, OnKeyboardEvent, NULL);
+	app_on_event(APP_EVENT_KEYUP, OnKeyboardEvent, NULL);
+	app_on_event(APP_EVENT_TOUCH, OnTouch, NULL);
+	app_on_event(APP_EVENT_TEXTINPUT, OnTextInput, NULL);
 	rbtree_set_compare_func(&self.event_records, CompareWidgetEventRecord);
 	rbtree_set_destroy_func(&self.event_records, DestoryWidgetEventRecord);
 	list_create(&self.touch_capturers);
@@ -1329,16 +1316,20 @@ void LCUIWidget_InitEvent(void)
 void LCUIWidget_FreeEvent(void)
 {
 	list_node_t *node;
+	app_off_event(APP_EVENT_WHEEL, OnMouseEvent);
+	app_off_event(APP_EVENT_MOUSEDOWN, OnMouseEvent);
+	app_off_event(APP_EVENT_MOUSEMOVE, OnMouseEvent);
+	app_off_event(APP_EVENT_MOUSEUP, OnMouseEvent);
+	app_off_event(APP_EVENT_KEYPRESS, OnKeyboardEvent);
+	app_off_event(APP_EVENT_KEYDOWN, OnKeyboardEvent);
+	app_off_event(APP_EVENT_KEYUP, OnKeyboardEvent);
+	app_off_event(APP_EVENT_TOUCH, OnTouch);
+	app_off_event(APP_EVENT_TEXTINPUT, OnTextInput);
 	LCUIMutex_Lock(&self.mutex);
-	for (list_each(node, &self.events)) {
-		int *id = node->data;
-		LCUI_UnbindEvent(*id);
-	}
 	rbtree_destroy(&self.event_names);
 	rbtree_destroy(&self.event_records);
 	dict_destroy(self.event_ids);
 	TouchCapturers_Clear(&self.touch_capturers);
-	list_destroy(&self.events, free);
 	list_destroy(&self.event_mappings, DestroyEventMapping);
 	LCUIMutex_Unlock(&self.mutex);
 	LCUIMutex_Destroy(&self.mutex);

@@ -129,7 +129,7 @@ static void check_textview_set_long_content_css(void)
 
 void test_textview_resize(void)
 {
-	LCUI_Init();
+	lcui_init();
 
 	build();
 
@@ -142,5 +142,5 @@ void test_textview_resize(void)
 	describe("check textview set long content css",
 		 check_textview_set_long_content_css);
 
-	LCUI_Destroy();
+	lcui_destroy();
 }
