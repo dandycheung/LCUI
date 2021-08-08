@@ -31,8 +31,7 @@
 #ifndef LCUI_DISPLAY_CONTROL_H
 #define LCUI_DISPLAY_CONTROL_H
 
-#include <LCUI/gui/metrics.h>
-#include <LCUI/gui/widget.h>
+#include <LCUI/ui.h>
 #include <LCUI/surface.h>
 
 LCUI_BEGIN_HEADER
@@ -131,7 +130,7 @@ LCUI_API int LCUIDisplay_GetHeight(void);
 LCUI_API void LCUIDisplay_InvalidateArea(pd_rect_t *rect);
 
 /** 获取当前部件所属的 surface */
-LCUI_API LCUI_Surface LCUIDisplay_GetSurfaceOwner(LCUI_Widget w);
+LCUI_API LCUI_Surface LCUIDisplay_GetSurfaceOwner(ui_widget_t* w);
 
 /** 根据 handle 获取 surface */
 LCUI_Surface LCUIDisplay_GetSurfaceByHandle(void *handle);

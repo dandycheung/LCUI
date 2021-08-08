@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <LCUI.h>
+#include <LCUI/graph.h>
 #include <LCUI/input.h>
 #include <LCUI/timer.h>
 #include <LCUI/cursor.h>
@@ -68,7 +69,7 @@ typedef struct SurfaceRecordRec_ {
 	list_t flash_rects;
 
 	LCUI_Surface surface;
-	LCUI_Widget widget;
+	ui_widget_t* widget;
 } SurfaceRecordRec, *SurfaceRecord;
 
 static struct LCUI_DisplayModule {
@@ -125,7 +126,7 @@ static size_t LCUIDisplay_RenderFlashRect(SurfaceRecord record,
 		return 0;
 	}
 	period = get_time_delta(flash_rect->paint_time);
-	count = Widget_Render(record->widget, paint);
+	count = ui_widget_render(record->widget, paint);
 	if (period >= duraion) {
 		flash_rect->paint_time = 0;
 		Surface_EndPaint(record->surface, paint);
@@ -193,7 +194,7 @@ static void LCUIDisplay_AppendFlashRects(SurfaceRecord record, pd_rect_t *rect)
 
 static void GetRenderingLayerSize(int *width, int *height)
 {
-	float scale = LCUIMetrics_GetScale();
+	float scale = ui_get_scale();
 
 	*width = (int)(LCUIDisplay_GetWidth() * scale);
 	*height = (int)(LCUIDisplay_GetHeight() * scale);
@@ -287,7 +288,7 @@ static size_t LCUIDisplay_RenderSurfaceRect(SurfaceRecord record,
 	DEBUG_MSG("[thread %d/%d] rect: (%d,%d,%d,%d)\n", omp_get_thread_num(),
 		  omp_get_num_threads(), paint->rect.x, paint->rect.y,
 		  paint->rect.width, paint->rect.height);
-	count = Widget_Render(record->widget, paint);
+	count = ui_widget_render(record->widget, paint);
 	if (display.settings.paint_flashing) {
 		LCUIDisplay_AppendFlashRects(record, &paint->rect);
 	}
@@ -367,7 +368,7 @@ void LCUIDisplay_Update(void)
 		if (record->widget && surface && Surface_IsReady(surface)) {
 			Surface_Update(surface);
 		}
-		Widget_GetInvalidArea(record->widget, &record->rects);
+		ui_widget_get_dirty_rects(record->widget, &record->rects);
 	}
 	if (display.mode == LCUI_DMODE_SEAMLESS || !record) {
 		return;
@@ -412,6 +413,7 @@ void LCUIDisplay_Present(void)
 void LCUIDisplay_InvalidateArea(pd_rect_t *rect)
 {
 	pd_rect_t area;
+	pd_rectf_t rectf;
 
 	if (!display.active) {
 		return;
@@ -423,11 +425,12 @@ void LCUIDisplay_InvalidateArea(pd_rect_t *rect)
 		area.height = LCUIDisplay_GetHeight();
 		rect = &area;
 	}
-	RectToInvalidArea(rect, &area);
+	LCUIRect_ToRectF(rect, &rectf, 1.0f);
+	ui_compute_rect_actual(&area, &rectf);
 	RectList_Add(&display.rects, &area);
 }
 
-static LCUI_Widget LCUIDisplay_GetBindWidget(LCUI_Surface surface)
+static ui_widget_t* LCUIDisplay_GetBindWidget(LCUI_Surface surface)
 {
 	SurfaceRecord record;
 	list_node_t *node;
@@ -441,7 +444,7 @@ static LCUI_Widget LCUIDisplay_GetBindWidget(LCUI_Surface surface)
 	return NULL;
 }
 
-static LCUI_Surface LCUIDisplay_GetBindSurface(LCUI_Widget widget)
+static LCUI_Surface LCUIDisplay_GetBindSurface(ui_widget_t* widget)
 {
 	SurfaceRecord record;
 	list_node_t *node;
@@ -455,14 +458,14 @@ static LCUI_Surface LCUIDisplay_GetBindSurface(LCUI_Widget widget)
 	return NULL;
 }
 
-LCUI_Surface LCUIDisplay_GetSurfaceOwner(LCUI_Widget w)
+LCUI_Surface LCUIDisplay_GetSurfaceOwner(ui_widget_t* w)
 {
 	if (LCUIDisplay_GetMode() == LCUI_DMODE_SEAMLESS) {
 		while (w->parent) {
 			w = w->parent;
 		}
 	} else {
-		w = LCUIWidget_GetRoot();
+		w = ui_root();
 	}
 	return LCUIDisplay_GetBindSurface(w);
 }
@@ -481,7 +484,7 @@ LCUI_Surface LCUIDisplay_GetSurfaceByHandle(void *handle)
 }
 
 /** 将 widget 与 sruface 进行绑定 */
-static void LCUIDisplay_BindSurface(LCUI_Widget widget)
+static void LCUIDisplay_BindSurface(ui_widget_t* widget)
 {
 	pd_rect_t rect;
 	SurfaceRecord record;
@@ -494,9 +497,9 @@ static void LCUIDisplay_BindSurface(LCUI_Widget widget)
 	record->widget = widget;
 	record->rendered = FALSE;
 	list_create(&record->flash_rects);
-	LCUIMetrics_ComputeRectActual(&rect, &widget->box.canvas);
-	if (Widget_CheckStyleValid(widget, key_top) &&
-	    Widget_CheckStyleValid(widget, key_left)) {
+	ui_compute_rect_actual(&rect, &widget->box.canvas);
+	if (ui_widget_check_style_valid(widget, key_top) &&
+	    ui_widget_check_style_valid(widget, key_left)) {
 		Surface_Move(record->surface, rect.x, rect.y);
 	}
 	Surface_SetCaptionW(record->surface, widget->title);
@@ -506,12 +509,12 @@ static void LCUIDisplay_BindSurface(LCUI_Widget widget)
 	} else {
 		Surface_Hide(record->surface);
 	}
-	Widget_InvalidateArea(widget, NULL, SV_GRAPH_BOX);
+	ui_widget_mark_dirty_rect(widget, NULL, SV_GRAPH_BOX);
 	list_append(&display.surfaces, record);
 }
 
 /** 解除 widget 与 sruface 的绑定 */
-static void LCUIDisplay_UnbindSurface(LCUI_Widget widget)
+static void LCUIDisplay_UnbindSurface(ui_widget_t* widget)
 {
 	SurfaceRecord record;
 	list_node_t *node;
@@ -528,9 +531,9 @@ static void LCUIDisplay_UnbindSurface(LCUI_Widget widget)
 
 static int LCUIDisplay_Windowed(void)
 {
-	LCUI_Widget root;
+	ui_widget_t* root;
 
-	root = LCUIWidget_GetRoot();
+	root = ui_root();
 	switch (display.mode) {
 	case LCUI_DMODE_WINDOWED:
 		return 0;
@@ -550,9 +553,9 @@ static int LCUIDisplay_Windowed(void)
 
 static int LCUIDisplay_FullScreen(void)
 {
-	LCUI_Widget root;
+	ui_widget_t* root;
 
-	root = LCUIWidget_GetRoot();
+	root = ui_root();
 	switch (display.mode) {
 	case LCUI_DMODE_SEAMLESS:
 		LCUIDisplay_CleanSurfaces();
@@ -578,7 +581,7 @@ static int LCUIDisplay_FullScreen(void)
 static int LCUIDisplay_Seamless(void)
 {
 	list_node_t *node;
-	LCUI_Widget root = LCUIWidget_GetRoot();
+	ui_widget_t* root = ui_root();
 
 	switch (display.mode) {
 	case LCUI_DMODE_SEAMLESS:
@@ -634,17 +637,17 @@ void LCUIDisplay_EnablePaintFlashing(LCUI_BOOL enable)
 void LCUIDisplay_SetSize(int width, int height)
 {
 	float scale;
-	LCUI_Widget root;
+	ui_widget_t* root;
 	LCUI_Surface surface;
 
 	if (display.mode == LCUI_DMODE_SEAMLESS) {
 		return;
 	}
-	root = LCUIWidget_GetRoot();
-	scale = LCUIMetrics_GetScale();
+	root = ui_root();
+	scale = ui_get_scale();
 	surface = LCUIDisplay_GetBindSurface(root);
 	Surface_Resize(surface, width, height);
-	Widget_Resize(root, width / scale, height / scale);
+	ui_widget_resize(root, width / scale, height / scale);
 }
 
 int LCUIDisplay_GetWidth(void)
@@ -654,7 +657,7 @@ int LCUIDisplay_GetWidth(void)
 	}
 	if (display.mode == LCUI_DMODE_WINDOWED ||
 	    display.mode == LCUI_DMODE_FULLSCREEN) {
-		return y_iround(LCUIWidget_GetRoot()->width);
+		return y_iround(ui_root()->width);
 	}
 	return display.driver->getWidth();
 }
@@ -666,7 +669,7 @@ int LCUIDisplay_GetHeight(void)
 	}
 	if (display.mode == LCUI_DMODE_WINDOWED ||
 	    display.mode == LCUI_DMODE_FULLSCREEN) {
-		return y_iround(LCUIWidget_GetRoot()->height);
+		return y_iround(ui_root()->height);
 	}
 	return display.driver->getHeight();
 }
@@ -808,53 +811,51 @@ void Surface_Present(LCUI_Surface surface)
 }
 
 /** 响应顶级部件的各种事件 */
-static void OnSurfaceEvent(LCUI_Widget w, LCUI_WidgetEvent e, void *arg)
+static void OnSurfaceEvent(ui_widget_t* w, ui_event_t* e, void *arg)
 {
-	LCUI_Widget root;
-	pd_rectf_t *rect;
+	ui_widget_t *root;
 	LCUI_Surface surface;
 	int *data, event_type, sync_props;
 
 	data = (int *)arg;
 	event_type = data[0];
 	sync_props = data[1];
-	root = LCUIWidget_GetRoot();
+	root = ui_root();
 	surface = LCUIDisplay_GetBindSurface(e->target);
 	if (display.mode == LCUI_DMODE_SEAMLESS) {
-		if (!surface && event_type != LCUI_WEVENT_LINK) {
+		if (!surface && event_type != UI_EVENT_LINK) {
 			return;
 		}
 	} else if (e->target == root) {
-		if (!surface && event_type != LCUI_WEVENT_LINK) {
+		if (!surface && event_type != UI_EVENT_LINK) {
 			return;
 		}
 	} else {
 		return;
 	}
-	rect = &e->target->box.canvas;
 	switch (event_type) {
-	case LCUI_WEVENT_LINK:
+	case UI_EVENT_LINK:
 		LCUIDisplay_BindSurface(e->target);
 		break;
-	case LCUI_WEVENT_UNLINK:
-	case LCUI_WEVENT_DESTROY:
+	case UI_EVENT_UNLINK:
+	case UI_EVENT_DESTROY:
 		LCUIDisplay_UnbindSurface(e->target);
 		break;
-	case LCUI_WEVENT_SHOW:
+	case UI_EVENT_SHOW:
 		Surface_Show(surface);
 		break;
-	case LCUI_WEVENT_HIDE:
+	case UI_EVENT_HIDE:
 		Surface_Hide(surface);
 		break;
-	case LCUI_WEVENT_RESIZE: {
+	case UI_EVENT_RESIZE: {
 		pd_rect_t area;
-		RectFToInvalidArea(rect, &area);
+		ui_compute_rect_actual(&area, &e->target->box.canvas);
 		if (sync_props) {
 			Surface_Resize(surface, area.width, area.height);
 		}
 		break;
 	}
-	case LCUI_WEVENT_TITLE:
+	case UI_EVENT_TITLE:
 		Surface_SetCaptionW(surface, e->target->title);
 		break;
 	default:
@@ -876,22 +877,22 @@ static void OnPaint(LCUI_Event e, void *arg)
 			continue;
 		}
 		LCUIRect_ToRectF(&dpy_ev->paint.rect, &rect, 1.0f);
-		Widget_InvalidateArea(record->widget, &rect, SV_GRAPH_BOX);
+		ui_widget_mark_dirty_rect(record->widget, &rect, SV_GRAPH_BOX);
 	}
 }
 
 static void OnResize(LCUI_Event e, void *arg)
 {
-	LCUI_Widget widget;
+	ui_widget_t* widget;
 	LCUI_DisplayEvent dpy_ev = arg;
-	float scale = LCUIMetrics_GetScale();
+	float scale = ui_get_scale();
 	float width = dpy_ev->resize.width / scale;
 	float height = dpy_ev->resize.height / scale;
 
 	widget = LCUIDisplay_GetBindWidget(dpy_ev->surface);
 	if (widget) {
-		Widget_Resize(widget, width, height);
-		widget->task.skip_surface_props_sync = TRUE;
+		ui_widget_resize(widget, width, height);
+		widget->update.skip_surface_props_sync = TRUE;
 	}
 	LCUI_RunFrame();
 }
@@ -901,8 +902,8 @@ static void OnMinMaxInfo(LCUI_Event e, void *arg)
 	LCUI_BOOL resizable = FALSE;
 	LCUI_DisplayEvent dpy_ev = arg;
 	LCUI_Surface s = dpy_ev->surface;
-	LCUI_Widget widget = LCUIDisplay_GetBindWidget(s);
-	LCUI_WidgetStyle *style = &widget->computed_style;
+	ui_widget_t* widget = LCUIDisplay_GetBindWidget(s);
+	ui_widget_style_t *style = &widget->computed_style;
 	int width = Surface_GetWidth(s);
 	int height = Surface_GetHeight(s);
 
@@ -924,7 +925,7 @@ static void OnMinMaxInfo(LCUI_Event e, void *arg)
 	}
 	if (resizable) {
 		pd_rect_t area;
-		RectFToInvalidArea(&widget->box.canvas, &area);
+		ui_compute_rect_actual(&area, &widget->box.canvas);
 		Surface_Resize(s, area.width, area.height);
 	}
 }
@@ -941,7 +942,7 @@ int LCUIDisplay_BindEvent(int event_id, LCUI_EventFunc func, void *arg,
 
 int LCUI_InitDisplay(LCUI_DisplayDriver driver)
 {
-	LCUI_Widget root;
+	ui_widget_t* root;
 	if (display.active) {
 		return -1;
 	}
@@ -966,12 +967,12 @@ int LCUI_InitDisplay(LCUI_DisplayDriver driver)
 		LCUIDisplay_Update();
 		return -2;
 	}
-	root = LCUIWidget_GetRoot();
+	root = ui_root();
 	display.driver->bindEvent(LCUI_DEVENT_RESIZE, OnResize, NULL, NULL);
 	display.driver->bindEvent(LCUI_DEVENT_MINMAXINFO, OnMinMaxInfo, NULL,
 				  NULL);
 	display.driver->bindEvent(LCUI_DEVENT_PAINT, OnPaint, NULL, NULL);
-	Widget_BindEvent(root, "surface", OnSurfaceEvent, NULL, NULL);
+	ui_widget_on(root, "surface", OnSurfaceEvent, NULL, NULL);
 	LCUIDisplay_SetMode(LCUI_DMODE_DEFAULT);
 	LCUIDisplay_Update();
 	logger_debug("[display] init ok, driver name: %s\n",

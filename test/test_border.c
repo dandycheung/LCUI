@@ -1,7 +1,7 @@
 #include <LCUI_Build.h>
 #include <LCUI/LCUI.h>
 #include <LCUI/draw/border.h>
-#include <LCUI/gui/widget.h>
+#include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 #include <LCUI/graph.h>
 #include <LCUI/image.h>
@@ -9,7 +9,7 @@
 int main(void)
 {
 	int ret = 0;
-	LCUI_Widget root, box;
+	ui_widget_t* root, box;
 
 	lcui_init();
 	box = LCUIBuilder_LoadFile("test_border.xml");
@@ -17,8 +17,8 @@ int main(void)
 		lcui_destroy();
 		return ret;
 	}
-	root = LCUIWidget_GetRoot();
-	Widget_Append(root, box);
-	Widget_Unwrap(box);
+	root = ui_root();
+	ui_widget_append(root, box);
+	ui_widget_unwrap(box);
 	return lcui_main();
 }

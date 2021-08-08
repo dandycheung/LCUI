@@ -1,4 +1,4 @@
-﻿/*
+/*
  * css_rule_font_face.h -- CSS @font-face rule parser module
  *
  * Copyright (c) 2018, Liu chao <lc-soft@live.cn> All rights reserved.

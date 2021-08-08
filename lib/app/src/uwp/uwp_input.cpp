@@ -116,10 +116,10 @@ void InputDriver::OnPointerPressed(CoreWindow^ sender,
 	switch (point->PointerDevice->PointerDeviceType) {
 	case PointerDeviceType::Mouse:
 		if (pointProps->IsLeftButtonPressed) {
-			ev.button.button = MOUSE_BUTTON_LEFT;
+			ev.mouse.button = MOUSE_BUTTON_LEFT;
 			m_mouse.leftButtonPressed = true;
 		} else if (pointProps->IsRightButtonPressed) {
-			ev.button.button = KEY_RIGHTBUTTON;
+			ev.mouse.button = KEY_RIGHTBUTTON;
 			m_mouse.rightButtonPressed = true;
 		}
 		break;
@@ -132,7 +132,7 @@ void InputDriver::OnPointerPressed(CoreWindow^ sender,
 		ClearInvalidTouchPoints(&m_touch.points);
 		/* 如果该触点是主触点，则顺便触发鼠标事件 */
 		if (tp->is_primary) {
-			ev.button.button = MOUSE_BUTTON_LEFT;
+			ev.mouse.button = MOUSE_BUTTON_LEFT;
 			m_mouse.leftButtonPressed = true;
 			break;
 		}
@@ -145,8 +145,8 @@ void InputDriver::OnPointerPressed(CoreWindow^ sender,
 	ev.type = APP_EVENT_MOUSEDOWN;
 	pos.x = y_iround(position.X);
 	pos.y = y_iround(position.Y);
-	ev.button.x = pos.x;
-	ev.button.y = pos.y;
+	ev.mouse.x = pos.x;
+	ev.mouse.y = pos.y;
 	LCUICursor_SetPos(pos);
 	LCUI_TriggerEvent(&ev, NULL);
 }
@@ -206,12 +206,12 @@ void InputDriver::OnPointerReleased(CoreWindow^ sender, PointerEventArgs^ args)
 		if (!pointProps->IsLeftButtonPressed &&
 		    m_mouse.leftButtonPressed) {
 			m_mouse.leftButtonPressed = false;
-			ev.button.button = MOUSE_BUTTON_LEFT;
+			ev.mouse.button = MOUSE_BUTTON_LEFT;
 		}
 		if (pointProps->IsRightButtonPressed &&
 		    m_mouse.rightButtonPressed) {
 			m_mouse.rightButtonPressed = false;
-			ev.button.button = KEY_RIGHTBUTTON;
+			ev.mouse.button = KEY_RIGHTBUTTON;
 		}
 		break;
 	case PointerDeviceType::Touch:
@@ -223,7 +223,7 @@ void InputDriver::OnPointerReleased(CoreWindow^ sender, PointerEventArgs^ args)
 		app_event_destroy(&ev);
 		if (tp->is_primary) {
 			m_mouse.leftButtonPressed = false;
-			ev.button.button = MOUSE_BUTTON_LEFT;
+			ev.mouse.button = MOUSE_BUTTON_LEFT;
 		}
 		break;
 	default:return;
@@ -231,8 +231,8 @@ void InputDriver::OnPointerReleased(CoreWindow^ sender, PointerEventArgs^ args)
 	ev.type = APP_EVENT_MOUSEUP;
 	pos.x = y_iround(position.X);
 	pos.y = y_iround(position.Y);
-	ev.button.x = pos.x;
-	ev.button.y = pos.y;
+	ev.mouse.x = pos.x;
+	ev.mouse.y = pos.y;
 	LCUI_TriggerEvent(&ev, NULL);
 	app_event_destroy(&ev);
 	LCUICursor_SetPos(pos);

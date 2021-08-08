@@ -68,18 +68,18 @@ static void DispathMouseButtonEvent(int button, int state)
 	if (mouse.button_state[button - 1]) {
 		if (!(state & button)) {
 			ev.type = APP_EVENT_MOUSEUP;
-			ev.button.x = mouse.x;
-			ev.button.y = mouse.y;
-			ev.button.button = button;
+			ev.mouse.x = mouse.x;
+			ev.mouse.y = mouse.y;
+			ev.mouse.button = button;
 			mouse.button_state[button - 1] = 0;
 			LCUI_TriggerEvent(&ev, NULL);
 			app_event_destroy(&ev);
 		}
 	} else if (state & button) {
 		ev.type = APP_EVENT_MOUSEDOWN;
-		ev.button.x = mouse.x;
-		ev.button.y = mouse.y;
-		ev.button.button = button;
+		ev.mouse.x = mouse.x;
+		ev.mouse.y = mouse.y;
+		ev.mouse.button = button;
 		mouse.button_state[button - 1] = 1;
 		LCUI_TriggerEvent(&ev, NULL);
 		app_event_destroy(&ev);
@@ -98,7 +98,7 @@ static void DispatchMouseEvent(void *arg1, void *arg2)
 	mouse.y = y_max(0, mouse.y);
 	mouse.x = y_min(LCUIDisplay_GetWidth(), mouse.x);
 	mouse.y = y_min(LCUIDisplay_GetHeight(), mouse.y);
-	ev.type = LCUI_MOUSEMOVE;
+	ev.type = APP_EVENT_MOUSEMOVE;
 	ev.type = APP_EVENT_MOUSEMOVE;
 	ev.motion.x = mouse.x;
 	ev.motion.y = mouse.y;

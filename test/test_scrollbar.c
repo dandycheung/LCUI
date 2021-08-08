@@ -5,7 +5,7 @@ int main(int argc, char **argv)
 {
 	lcui_init();
 	LCUIDisplay_SetSize(800, 640);
-	LCUI_LoadCSSString(test_css, __FILE__);
+	ui_load_css_string(test_css, __FILE__);
 	/* We have two ways to build content view */
 	BuildContentViewFromXML();
 	BuildContentView();

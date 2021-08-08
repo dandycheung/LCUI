@@ -128,7 +128,7 @@ typedef struct pd_rectf_t_ {
 
 typedef struct LCUI_Rect2F_ {
 	float left, top, right, bottom;
-} LCUI_Rect2F;
+} pd_rect_t2F;
 
 /* FIXME: remove LCUI_StyleValue
  * These values do not need to put in LCUI_StyleValue, because they are not
@@ -325,70 +325,6 @@ typedef struct LCUI_StyleRec_ {
 	};
 } LCUI_StyleRec, *LCUI_Style;
 
-typedef enum LCUI_SizingRule_ {
-	LCUI_SIZING_RULE_NONE,
-	LCUI_SIZING_RULE_FIXED,
-	LCUI_SIZING_RULE_FILL,
-	LCUI_SIZING_RULE_PERCENT,
-	LCUI_SIZING_RULE_FIT_CONTENT
-} LCUI_SizingRule;
-
-typedef enum LCUI_LayoutRule_ {
-	LCUI_LAYOUT_RULE_AUTO,
-	LCUI_LAYOUT_RULE_MAX_CONTENT,
-	LCUI_LAYOUT_RULE_FIXED_WIDTH,
-	LCUI_LAYOUT_RULE_FIXED_HEIGHT,
-	LCUI_LAYOUT_RULE_FIXED
-} LCUI_LayoutRule;
-
-typedef struct LCUI_FlexLayoutStyle {
-	/**
-	 * The flex shrink factor of a flex item
-	 * See more:
-	 * https://developer.mozilla.org/en-US/docs/Web/CSS/flex-shrink
-	 */
-	float shrink;
-
-	/* the flex grow factor of a flex item main size
-	 * See more: https://developer.mozilla.org/en-US/docs/Web/CSS/flex-grow
-	 */
-	float grow;
-
-	/**
-	 * The initial main size of a flex item
-	 * See more: https://developer.mozilla.org/en-US/docs/Web/CSS/flex-basis
-	 */
-	float basis;
-
-	LCUI_StyleValue wrap : 8;
-	LCUI_StyleValue direction : 8;
-
-	/**
-	 * Sets the align-self value on all direct children as a group
-	 * See more:
-	 * https://developer.mozilla.org/en-US/docs/Web/CSS/align-items
-	 */
-	LCUI_StyleValue align_items : 8;
-
-	/**
-	 * Sets the distribution of space between and around content items along
-	 * a flexbox's cross-axis
-	 * See more: https://developer.mozilla.org/en-US/docs/Web/CSS/align-content
-	 */
-	LCUI_StyleValue align_content : 8;
-
-	/**
-	 * Defines how the browser distributes space between and around content
-	 * items along the main-axis of a flex container See more:
-	 * https://developer.mozilla.org/en-US/docs/Web/CSS/justify-content
-	 */
-	LCUI_StyleValue justify_content : 8;
-} LCUI_FlexBoxLayoutStyle;
-
-typedef struct LCUI_BoundBoxRec {
-	LCUI_StyleRec top, right, bottom, left;
-} LCUI_BoundBox;
-
 typedef struct LCUI_BackgroundPosition {
 	LCUI_BOOL using_value;
 	union {
@@ -410,7 +346,7 @@ typedef struct LCUI_BackgroundSize {
 } LCUI_BackgroundSize;
 
 typedef struct LCUI_BackgroundStyle {
-	pd_canvas_t image; /**< 背景图 */
+	pd_canvas_t *image; /**< 背景图 */
 	pd_color_t color; /**< 背景色 */
 	struct {
 		LCUI_BOOL x, y;
@@ -441,37 +377,92 @@ typedef struct pd_paint_context_t_ {
 } pd_paint_context_t;
 
 typedef void (*FuncPtr)(void *);
+typedef void(*LCUI_TaskFunc)(void*, void*);
 
-typedef struct LCUI_WidgetTasksRec_ {
-	clock_t time;
-	size_t update_count;
-	size_t refresh_count;
-	size_t layout_count;
-	size_t user_task_count;
-	size_t destroy_count;
-	size_t destroy_time;
-} LCUI_WidgetTasksProfileRec, *LCUI_WidgetTasksProfile;
+enum LCUI_SysEventType {
+	LCUI_NONE,
+	APP_EVENT_KEYDOWN, /**< 键盘触发的按键按下事件 */
+	APP_EVENT_KEYPRESS, /**< 按键输入事件，仅字母、数字等ANSI字符键可触发 */
+	APP_EVENT_KEYUP,      /**< 键盘触发的按键释放事件 */
+	LCUI_MOUSE,      /**< 鼠标事件 */
+	APP_EVENT_MOUSEMOVE,  /**< 鼠标触发的鼠标移动事件 */
+	APP_EVENT_MOUSEDOWN,  /**< 鼠标触发的按钮按下事件 */
+	APP_EVENT_MOUSEUP,    /**< 鼠标触发的按钮释放事件 */
+	APP_EVENT_WHEEL, /**< 鼠标触发的滚轮滚动事件 */
+	LCUI_TEXTINPUT,  /**< 输入法触发的文本输入事件 */
+	LCUI_TOUCH,
+	APP_EVENT_TOUCHMOVE,
+	APP_EVENT_TOUCHDOWN,
+	APP_EVENT_TOUCHUP,
+	LCUI_PAINT,
+	LCUI_WIDGET,
+	LCUI_QUIT, /**< 在 LCUI 退出前触发的事件 */
+	LCUI_SETTINGS_CHANGE,
+	LCUI_USER = 100 /**< 用户事件，可以把这个当成系统事件与用户事件的分界 */
+};
 
-typedef struct LCUI_FrameProfileRec_ {
-	size_t timers_count;
-	clock_t timers_time;
+typedef struct LCUI_TouchPointRec_ {
+	int x;
+	int y;
+	int id;
+	int state;
+	LCUI_BOOL is_primary;
+} LCUI_TouchPointRec, *LCUI_TouchPoint;
 
-	size_t events_count;
-	clock_t events_time;
+typedef struct LCUI_PaintEvent_ {
+	pd_rect_t rect;
+} LCUI_PaintEvent;
 
-	size_t render_count;
-	clock_t render_time;
-	clock_t present_time;
+/** The event structure to describe a user interaction with the keyboard */
+typedef struct LCUI_KeyboardEvent_ {
+	/** The virtual-key code of the nonsystem key */
+	int code;
 
-	LCUI_WidgetTasksProfileRec widget_tasks;
-} LCUI_FrameProfileRec, *LCUI_FrameProfile;
+	/** whether the Ctrl key was active when the key event was generated */
+	LCUI_BOOL ctrl_key;
 
-typedef struct LCUI_ProfileRec_ {
-	clock_t start_time;
-	clock_t end_time;
-	unsigned frames_count;
-	LCUI_FrameProfileRec frames[LCUI_MAX_FRAMES_PER_SEC];
-} LCUI_ProfileRec, *LCUI_Profile;
+	/** whether the Shift key was active when the key event was generated */
+	LCUI_BOOL shift_key;
+} app_keyboard_event_t;
+
+typedef struct LCUI_MouseMotionEvent_ {
+	int x, y;
+	int xrel, yrel;
+} app_mouse_event_t;
+
+typedef struct LCUI_MouseButtonEvent_ {
+	int x, y;
+	int button;
+} app_mouse_event_t;
+
+typedef struct LCUI_MouseWheelEvent_ {
+	int x, y;
+	int delta;
+} app_wheel_event_t;
+
+typedef struct LCUI_TouchEvent_ {
+	int n_points;
+	touch_point_t *points;
+} app_touch_event_t;
+
+typedef struct LCUI_TextInputEvent_ {
+	wchar_t *text;
+	size_t length;
+} app_textinput_event_t;
+
+typedef struct LCUI_SysEventRec_ {
+	uint32_t type;
+	void *data;
+	union {
+		app_mouse_event_t motion;
+		app_mouse_event_t button;
+		app_wheel_event_t wheel;
+		app_textinput_event_t text;
+		app_keyboard_event_t key;
+		app_touch_event_t touch;
+		LCUI_PaintEvent paint;
+	};
+} LCUI_SysEventRec, *LCUI_SysEvent;
 
 LCUI_END_HEADER
 

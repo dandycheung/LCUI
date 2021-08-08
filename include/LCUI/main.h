@@ -51,14 +51,8 @@ LCUI_API LCUI_BOOL lcui_post_task(LCUI_Task task);
  */
 LCUI_API void lcui_post_async_task(LCUI_Task task, int target_worker_id);
 
-/**
- * 添加异步任务
- * 该任务将会添加至工作线程中执行
- */
-LCUI_API int LCUI_PostAsyncTask(LCUI_Task task);
-
 /** lcui_post_task 的简化版本 */
-#define LCUI_PostSimpleTask(FUNC, ARG1, ARG2)             \
+#define lcui_post_simple_task(FUNC, ARG1, ARG2)             \
 	do {                                              \
 		LCUI_TaskRec _ui_task = { 0 };            \
 		_ui_task.arg[0] = (void *)ARG1;           \

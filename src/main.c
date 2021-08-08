@@ -34,7 +34,7 @@
 #include <errno.h>
 #include <string.h>
 #include <LCUI.h>
-#include <app.h>
+#include <LCUI/app.h>
 #include <LCUI/thread.h>
 #include <LCUI/worker.h>
 #include <LCUI/timer.h>
@@ -58,6 +58,27 @@
 #define STATE_ACTIVE 1
 #define STATE_KILLED 0
 
+typedef struct LCUI_FrameProfileRec_ {
+	size_t timers_count;
+	clock_t timers_time;
+
+	size_t events_count;
+	clock_t events_time;
+
+	size_t render_count;
+	clock_t render_time;
+	clock_t present_time;
+
+	ui_profile_t ui_profile;
+} LCUI_FrameProfileRec, *LCUI_FrameProfile;
+
+typedef struct LCUI_ProfileRec_ {
+	clock_t start_time;
+	clock_t end_time;
+	unsigned frames_count;
+	LCUI_FrameProfileRec frames[LCUI_MAX_FRAMES_PER_SEC];
+} LCUI_ProfileRec, *LCUI_Profile;
+
 typedef struct LCUI_MainLoopRec_ {
 	int state;       /**< 主循环的状态 */
 	LCUI_Thread tid; /**< 当前运行该主循环的线程的ID */
@@ -77,6 +98,234 @@ static struct lcui_app_t {
 	LCUI_Worker main_worker;		/**< 主工作线程 */
 	LCUI_Worker workers[LCUI_WORKER_NUM];	/**< 普通工作线程 */
 	int worker_next;			/**< 下一个工作线程编号 */
+	LCUI_SettingsRec settings;
+	LCUI_ProfileRec profile;
+	LCUI_FrameProfile frame;
+	int settings_change_handler_id;
+} MainApp;
+
+/* clang-format on */
+static void LCUIProfile_Init(LCUI_Profile profile)
+{
+	memset(profile, 0, sizeof(LCUI_ProfileRec));
+	profile->start_time = clock();
+}
+
+static void LCUIProfile_Print(LCUI_Profile profile)
+{
+	unsigned i;
+	LCUI_FrameProfile frame;
+
+	logger_debug("\nframes_count: %zu, time: %ld\n", profile->frames_count,
+		     profile->end_time - profile->start_time);
+	for (i = 0; i < profile->frames_count; ++i) {
+		frame = &profile->frames[i];
+		logger_debug("=== frame [%u/%u] ===\n", i + 1,
+			     profile->frames_count);
+		logger_debug("timers.count: %zu\ntimers.time: %ldms\n",
+			     frame->timers_count, frame->timers_time);
+		logger_debug("events.count: %zu\nevents.time: %ldms\n",
+			     frame->events_count, frame->events_time);
+		logger_debug("ui_profile.time: %ldms\n"
+			     "ui_profile.update_count: %u\n"
+			     "ui_profile.refresh_count: %u\n"
+			     "ui_profile.layout_count: %u\n"
+			     "ui_profile.user_task_count: %u\n"
+			     "ui_profile.destroy_count: %u\n"
+			     "ui_profile.destroy_time: %ldms\n",
+			     frame->ui_profile.time,
+			     frame->ui_profile.update_count,
+			     frame->ui_profile.refresh_count,
+			     frame->ui_profile.layout_count,
+			     frame->ui_profile.user_task_count,
+			     frame->ui_profile.destroy_count,
+			     frame->ui_profile.destroy_time);
+		logger_debug("render: %zu, %ldms, %ldms\n", frame->render_count,
+			     frame->render_time, frame->present_time);
+	}
+}
+
+static LCUI_FrameProfile LCUIProfile_BeginFrame(LCUI_Profile profile,
+						LCUI_Settings settings)
+{
+	LCUI_FrameProfile frame;
+
+	frame = &profile->frames[profile->frames_count];
+	if (profile->frames_count > (unsigned)settings->frame_rate_cap) {
+		profile->frames_count = 0;
+	}
+	memset(frame, 0, sizeof(LCUI_FrameProfileRec));
+	return frame;
+}
+
+static void LCUIProfile_EndFrame(LCUI_Profile profile, LCUI_Settings settings)
+{
+	profile->frames_count += 1;
+	profile->end_time = clock();
+	if (profile->end_time - profile->start_time >= CLOCKS_PER_SEC) {
+		if (profile->frames_count < (unsigned)settings->frame_rate_cap / 4) {
+			LCUIProfile_Print(profile);
+		}
+		profile->frames_count = 0;
+		profile->start_time = profile->end_time;
+	}
+}
+
+static void OnSettingsChangeEvent(LCUI_SysEvent e, void *arg)
+{
+	Settings_Init(&MainApp.settings);
+	StepTimer_SetFrameLimit(MainApp.timer, MainApp.settings.frame_rate_cap);
+}
+
+/* TODO: refactor event loop
+
+static void lcui_convert_ui_event()
+{
+	LCUICursor_GetPos(&pos);
+	scale = ui_get_scale();
+	pos.x = y_iround(pos.x / scale);
+	pos.y = y_iround(pos.y / scale);
+	// keyboard
+	switch (e->type) {
+	case LCUI_KEYDOWN:
+		e.type = UI_EVENT_KEYDOWN;
+		break;
+	case LCUI_KEYUP:
+		e.type = UI_EVENT_KEYUP;
+		break;
+	case LCUI_KEYPRESS:
+		e.type = UI_EVENT_KEYPRESS;
+		break;
+	default:
+		return;
+	}
+	// textinput
+	e.type = UI_EVENT_TEXTINPUT;
+	e.text.length = e->text.length;
+	e.text.text = NEW(wchar_t, e->text.length + 1);
+	if (!e.text.text) {
+		return;
+	}
+	wcsncpy(e.text.text, e->text.text, e->text.length + 1);
+	ui_widget_emit_event(e.target, &e, NULL);
+	free(e.text.text);
+	e.text.text = NULL;
+	e.text.length = 0;
+	ui_event_destroy(&e);
+}
+*/
+
+void LCUI_RunFrameWithProfile(LCUI_FrameProfile profile)
+{
+	profile->timers_time = clock();
+	profile->timers_count = lcui_process_timers();
+	profile->timers_time = clock() - profile->timers_time;
+
+	profile->events_time = clock();
+	profile->events_count = LCUI_ProcessEvents();
+	profile->events_time = clock() - profile->events_time;
+
+	LCUICursor_Update();
+	ui_update_with_profile(&profile->ui_profile);
+
+	profile->render_time = clock();
+	LCUIDisplay_Update();
+	profile->render_count = LCUIDisplay_Render();
+	profile->render_time = clock() - profile->render_time;
+
+	profile->present_time = clock();
+	LCUIDisplay_Present();
+	profile->present_time = clock() - profile->present_time;
+}
+
+void LCUI_RunFrame(void)
+{
+	lcui_process_timers();
+	LCUI_ProcessEvents();
+	LCUICursor_Update();
+	ui_update();
+	LCUIDisplay_Update();
+	LCUIDisplay_Render();
+	LCUIDisplay_Present();
+}
+
+static void LCUI_InitEvent(void)
+{
+	LCUIMutex_Init(&System.event.mutex);
+	System.event.trigger = EventTrigger();
+}
+
+static void LCUI_FreeEvent(void)
+{
+	LCUIMutex_Destroy(&System.event.mutex);
+	EventTrigger_Destroy(System.event.trigger);
+	System.event.trigger = NULL;
+}
+
+static void OnEvent(LCUI_Event e, void *arg)
+{
+	SysEventHandler handler = e->data;
+	SysEventPack pack = arg;
+	pack->event->type = e->type;
+	pack->event->data = handler->data;
+	handler->func(pack->event, pack->arg);
+}
+
+static void DestroySysEventHandler(void *arg)
+{
+	SysEventHandler handler = arg;
+	if (handler->data && handler->destroy_data) {
+		handler->destroy_data(handler->data);
+	}
+	handler->data = NULL;
+	free(arg);
+}
+
+int LCUI_BindEvent(int id, LCUI_SysEventFunc func, void *data,
+		   void (*destroy_data)(void *))
+{
+	int ret;
+	SysEventHandler handler;
+	if (System.state != STATE_ACTIVE) {
+		return -1;
+	}
+	handler = NEW(SysEventHandlerRec, 1);
+	handler->func = func;
+	handler->data = data;
+	handler->destroy_data = destroy_data;
+	LCUIMutex_Lock(&System.event.mutex);
+	ret = EventTrigger_Bind(System.event.trigger, id, OnEvent, handler,
+				DestroySysEventHandler);
+	LCUIMutex_Unlock(&System.event.mutex);
+	return ret;
+}
+
+int LCUI_UnbindEvent(int handler_id)
+{
+	int ret;
+	if (System.state != STATE_ACTIVE) {
+		return -1;
+	}
+	LCUIMutex_Lock(&System.event.mutex);
+	ret = EventTrigger_Unbind2(System.event.trigger, handler_id);
+	LCUIMutex_Unlock(&System.event.mutex);
+	return ret;
+}
+
+int LCUI_TriggerEvent(LCUI_SysEvent e, void *arg)
+{
+	if (System.state != STATE_ACTIVE) {
+		return -1;
+	}
+	int ret;
+	SysEventPackRec pack;
+	pack.arg = arg;
+	pack.event = e;
+	LCUIMutex_Lock(&System.event.mutex);
+	ret = EventTrigger_Trigger(System.event.trigger, e->type, &pack);
+	LCUIMutex_Unlock(&System.event.mutex);
+	return ret;
+}
 
 	LCUI_SettingsRec settings;
 } lcui_app;
@@ -216,8 +465,7 @@ void lcui_init_base(void)
 	LCUI_InitFontLibrary();
 	lcui_init_timers();
 	LCUI_InitCursor();
-	LCUI_InitWidget();
-	LCUI_InitMetrics();
+	ui_init();
 	lcui_init_ui_preset_widgets();
 }
 
@@ -249,7 +497,7 @@ int lcui_destroy(void)
 	lcui_destroy_app();
 	app_destroy_ime();
 	LCUI_FreeKeyboard();
-	LCUI_FreeWidget();
+	ui_destroy();
 	LCUI_FreeCursor();
 	LCUI_FreeFontLibrary();
 	lcui_destroy_timers();
