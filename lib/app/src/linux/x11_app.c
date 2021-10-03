@@ -238,7 +238,7 @@ static int app_add_native_event_listener(int event_type,
 	listener->handler = handler;
 	listener->data = data;
 	listener->type = event_type;
-	LinkedList_Append(&x11_app.native_listeners, listener);
+	list_append(&x11_app.native_listeners, listener);
 	return 0;
 }
 
@@ -253,7 +253,7 @@ static int app_remove_native_event_listener(int event_type,
 		listener = node->data;
 		if (listener->handler == handler &&
 		    listener->type == event_type) {
-			LinkedList_DeleteNode(&x11_app.native_listeners,
+			list_delete_node(&x11_app.native_listeners,
 					      node);
 			free(listener);
 			node = prev;
@@ -469,7 +469,7 @@ static void x11_app_window_end_paint(app_window_t *wnd,
 
 	rect = malloc(sizeof(pd_rect_t));
 	*rect = paint->rect;
-	LinkedList_Append(&wnd->rects, rect);
+	list_append(&wnd->rects, rect);
 	pd_canvas_init(paint->canvas);
 	free(paint);
 }

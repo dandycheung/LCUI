@@ -13,7 +13,7 @@
 #define APP_PLATFORM_LINUX
 #endif
 
-typedef LCUI_PaintContextRec app_window_paint_t;
+typedef pd_paint_context_t app_window_paint_t;
 
 typedef enum app_id_t {
 	APP_ID_UNKNOWN,
@@ -97,7 +97,7 @@ typedef struct app_driver_t {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
  */
-typedef enum keycode_t {
+enum keycode {
 	KEY_BACKSPACE = 8,
 	KEY_TAB = 9,
 	KEY_ENTER = 13,
@@ -164,7 +164,7 @@ typedef enum keycode_t {
 	KEY_BACKSLASH = 220,
 	KEY_BRACKETRIGHT = 221,
 	KEY_APOSTROPHE = 222
-} keycode_t;
+};
 
 /**
  * @see
@@ -187,7 +187,7 @@ typedef enum mouse_button_code_t {
  * @see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
  */
 typedef struct app_keyboard_event_t {
-	keycode_t code;
+	int code;
 	LCUI_BOOL alt_key;
 	LCUI_BOOL ctrl_key;
 	LCUI_BOOL shift_key;

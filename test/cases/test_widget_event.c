@@ -8,7 +8,7 @@ void test_widget_mouse_event(void)
 {
 	ui_widget_t* root;
 	ui_widget_t* parent, child;
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 
 	lcui_init();
 	root = ui_root();

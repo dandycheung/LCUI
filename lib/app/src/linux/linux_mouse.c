@@ -64,7 +64,7 @@ static struct LCUI_LinuxMouseDriver {
 
 static void DispathMouseButtonEvent(int button, int state)
 {
-	LCUI_SysEventRec ev = { 0 };
+	app_event_t ev = { 0 };
 	if (mouse.button_state[button - 1]) {
 		if (!(state & button)) {
 			ev.type = APP_EVENT_MOUSEUP;
@@ -90,7 +90,7 @@ static void DispatchMouseEvent(void *arg1, void *arg2)
 {
 	char *buf = arg1;
 	int state = buf[0] & 0x07;
-	LCUI_SysEventRec ev = { 0 };
+	app_event_t ev = { 0 };
 
 	mouse.x += buf[1];
 	mouse.y -= buf[2];

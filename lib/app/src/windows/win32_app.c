@@ -84,7 +84,7 @@ int app_add_native_event_listener(int event_type, app_native_event_handler_t han
 	listener->handler = handler;
 	listener->data = data;
 	listener->type = event_type;
-	LinkedList_Append(&win32_app.native_listeners, listener);
+	list_append(&win32_app.native_listeners, listener);
 	return 0;
 }
 
@@ -97,7 +97,7 @@ int app_remove_native_event_listener(int event_type, app_native_event_handler_t 
 		prev = node->prev;
 		listener = node->data;
 		if (listener->handler == handler && listener->type == event_type) {
-			LinkedList_DeleteNode(&win32_app.native_listeners, node);
+			list_delete_node(&win32_app.native_listeners, node);
 			free(listener);
 			node = prev;
 			return 0;
@@ -135,6 +135,8 @@ static void convert_client_size_to_window_size(app_window_t *wnd, int *width,
 
 app_window_t *app_get_window_by_handle(void *handle)
 {
+	list_node_t *node;
+
 	for (list_each(node, &win32_app.windows)) {
 		if (((app_window_t *)node->data)->hwnd == handle) {
 			return node->data;
@@ -203,7 +205,7 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 		break;
 	}
 	case WM_DESTROY:
-		LinkedList_Unlink(&win32_app.windows, &wnd->node);
+		list_unlink(&win32_app.windows, &wnd->node);
 		app_window_destroy(wnd);
 		return 0;
 	case WM_KEYDOWN:

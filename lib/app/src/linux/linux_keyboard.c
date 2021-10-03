@@ -111,7 +111,7 @@ static int FreeLinuxKeyboard(void)
 static void DispatchKeyboardEvent(void *arg1, void *arg2)
 {
 	wchar_t str[2];
-	LCUI_SysEventRec ev = { 0 };
+	app_event_t ev = { 0 };
 
 	ev.key.code = *((int *)arg1);
 	switch (ev.key.code) {

@@ -82,7 +82,7 @@ int app_post_event(app_event_t *e)
 		return -ENOMEM;
 	}
 	app_event_copy(ev, e);
-	list_t_Append(e->data, ev);
+	list_append(e->data, ev);
 	return 0;
 }
 
@@ -98,7 +98,7 @@ int app_add_event_listener(int event_type, app_event_handler_t handler,
 	listener->handler = handler;
 	listener->data = data;
 	listener->type = event_type;
-	LinkedList_Append(&app_events.listeners, listener);
+	list_append(&app_events.listeners, listener);
 	return 0;
 }
 
@@ -107,11 +107,11 @@ int app_remove_event_listener(int event_type, app_event_handler_t handler)
 	list_node_t *node, *prev;
 	app_event_listener_t *listener;
 
-	for (LinkedList_Each(node, &app_events.listeners)) {
+	for (list_each(node, &app_events.listeners)) {
 		prev = node->prev;
 		listener = node->data;
 		if (listener->handler == handler && listener->type == event_type) {
-			LinkedList_DeleteNode(&app_events.listeners, node);
+			list_delete_node(&app_events.listeners, node);
 			free(listener);
 			node = prev;
 			return 0;
@@ -123,10 +123,10 @@ int app_remove_event_listener(int event_type, app_event_handler_t handler)
 int app_process_event(app_event_t *e)
 {
 	int count = 0;
-	list_tNode *node;
+	list_node_t *node;
 	app_event_listener_t *listener;
 
-	for (list_t_Each(node, &app_events.listeners)) {
+	for (list_each(node, &app_events.listeners)) {
 		listener = node->data;
 		if (listener->type == e->type) {
 			listener->handler(e, listener->data);

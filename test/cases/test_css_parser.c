@@ -112,7 +112,7 @@ static void test_parse_flex_0_0_100px(void)
 
 void test_css_parser(void)
 {
-	ui_widget_t* root, box, btn;
+	ui_widget_t *root, *box, *btn;
 
 	lcui_init();
 	box = LCUIBuilder_LoadFile("test_css_parser.xml");

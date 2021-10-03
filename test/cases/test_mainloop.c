@@ -29,7 +29,7 @@ static void OnBtnClick(ui_widget_t* w, ui_event_t* e, void *arg)
 
 static void OnTriggerBtnClick(void *arg)
 {
-	LCUI_SysEventRec e;
+	app_event_t e;
 
 	e.type = APP_EVENT_MOUSEDOWN;
 	e.mouse.button = MOUSE_BUTTON_LEFT;

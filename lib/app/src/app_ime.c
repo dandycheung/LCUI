@@ -244,9 +244,9 @@ static void ime_on_keydown(app_event_t *e, void *arg)
 
 void app_init_ime(void)
 {
-	list_create(&self.list);
+	list_create(&app_ime.list);
 	app_ime.active = TRUE;
-	LCUI_BindEvent(APP_EVENT_KEYDOWN, ime_on_keydown, NULL, NULL);
+	app_on_event(APP_EVENT_KEYDOWN, ime_on_keydown, NULL, NULL);
 #ifdef APP_PLATFORM_UWP
 	return;
 #else

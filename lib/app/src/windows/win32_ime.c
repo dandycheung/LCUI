@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <app.h>
 #ifdef APP_PLATFORM_WIN_DESKTOP
+#include <windows.h>
 #include <ime.h>
 
 #pragma comment(lib, "Imm32.lib")

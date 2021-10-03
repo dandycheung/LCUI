@@ -9,7 +9,7 @@
 int main(void)
 {
 	int ret = 0;
-	ui_widget_t* root, box;
+	ui_widget_t *root, *box;
 
 	lcui_init();
 	box = LCUIBuilder_LoadFile("test_border.xml");

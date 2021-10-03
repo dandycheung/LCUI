@@ -3,7 +3,7 @@ add_includedirs("src", "include")
 set_configdir("src")
 add_configfiles("src/config.h.in")
 option("with-libx11", {showmenu = true, default = true})
-option("enable-openmp", {showmenu = true, default = true})
+
 option("enable-touch")
     set_showmenu(true)
     set_default(true)
@@ -54,12 +54,7 @@ target("lcui-linux")
 
 target("lcui-app")
     set_kind("static")
-    add_rules("c.openmp", "c++.openmp")
-    add_packages("libomp")
     add_files("src/*.c")
-    if has_package("libomp") then
-        set_configvar("ENABLE_OPENMP", 1)
-    end
     if is_plat("windows") then
         add_options("uwp", "enable-touch")
         if has_config("uwp") then

@@ -19,7 +19,7 @@ static list_t touch_bindings;
 
 static void OnTouchWidget(ui_widget_t* w, ui_event_t* e, void *arg)
 {
-	touch_point_t *point;
+	ui_touch_point_t *point;
 	TouchPointBinding binding;
 
 	if (e->touch.n_points == 0) {

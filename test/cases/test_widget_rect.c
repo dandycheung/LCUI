@@ -10,7 +10,7 @@ void test_widget_rect(void)
 {
 	ui_widget_t* root;
 	ui_widget_t* parent, child;
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	pd_rect_t *rect;
 	pd_rect_t expected_rect;
 	list_t rects;

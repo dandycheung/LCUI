@@ -1,6 +1,12 @@
 #include "config.h"
 #include <app.h>
 
+#ifdef APP_PLATFORM_WIN_DESKTOP
+
+int ime_add_win32(void);
+
+#endif
+
 #ifdef APP_PLATFORM_LINUX
 
 void fb_app_driver_init(app_driver_t *dirver);

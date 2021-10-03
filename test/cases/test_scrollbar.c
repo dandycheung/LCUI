@@ -1,6 +1,5 @@
 #include <LCUI.h>
 #include <LCUI/display.h>
-#include <LCUI/input.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/widget/scrollbar.h>
 #include <LCUI/gui/builder.h>
@@ -99,7 +98,7 @@ int BuildContentViewFromXML(void)
 void test_scrollbar(void)
 {
 	float left, top;
-	LCUI_SysEventRec e = { 0 };
+	app_event_t e = { 0 };
 	ui_widget_t* content;
 
 	lcui_init();
@@ -113,10 +112,8 @@ void test_scrollbar(void)
 	top = content->computed_style.top;
 
 	e.type = APP_EVENT_MOUSEMOVE;
-	e.motion.x = 300;
-	e.motion.y = 275;
-	e.motion.xrel = 0;
-	e.motion.yrel = 0;
+	e.mouse.x = 300;
+	e.mouse.y = 275;
 	LCUI_TriggerEvent(&e, NULL);
 	LCUI_RunFrame();
 
@@ -128,10 +125,8 @@ void test_scrollbar(void)
 	LCUI_RunFrame();
 
 	e.type = APP_EVENT_MOUSEMOVE;
-	e.motion.x = 600;
-	e.motion.y = 275;
-	e.motion.xrel = 0;
-	e.motion.yrel = 0;
+	e.mouse.x = 600;
+	e.mouse.y = 275;
 	LCUI_TriggerEvent(&e, NULL);
 	LCUI_RunFrame();
 
@@ -144,10 +139,8 @@ void test_scrollbar(void)
 	top = content->computed_style.top;
 
 	e.type = APP_EVENT_MOUSEMOVE;
-	e.motion.x = 400;
-	e.motion.y = 275;
-	e.motion.xrel = 0;
-	e.motion.yrel = 0;
+	e.mouse.x = 400;
+	e.mouse.y = 275;
 	LCUI_TriggerEvent(&e, NULL);
 	e.type = APP_EVENT_MOUSEUP;
 	e.mouse.button = MOUSE_BUTTON_LEFT;
@@ -165,10 +158,8 @@ void test_scrollbar(void)
 	top = content->computed_style.top;
 
 	e.type = APP_EVENT_MOUSEMOVE;
-	e.motion.x = 555;
-	e.motion.y = 45;
-	e.motion.xrel = 0;
-	e.motion.yrel = 0;
+	e.mouse.x = 555;
+	e.mouse.y = 45;
 	LCUI_TriggerEvent(&e, NULL);
 	LCUI_RunFrame();
 
@@ -180,10 +171,8 @@ void test_scrollbar(void)
 	LCUI_RunFrame();
 
 	e.type = APP_EVENT_MOUSEMOVE;
-	e.motion.x = 555;
-	e.motion.y = 200;
-	e.motion.xrel = 0;
-	e.motion.yrel = 0;
+	e.mouse.x = 555;
+	e.mouse.y = 200;
 	LCUI_TriggerEvent(&e, NULL);
 	LCUI_RunFrame();
 
@@ -196,10 +185,8 @@ void test_scrollbar(void)
 	top = content->computed_style.top;
 
 	e.type = APP_EVENT_MOUSEMOVE;
-	e.motion.x = 555;
-	e.motion.y = 100;
-	e.motion.xrel = 0;
-	e.motion.yrel = 0;
+	e.mouse.x = 555;
+	e.mouse.y = 100;
 	LCUI_TriggerEvent(&e, NULL);
 	e.type = APP_EVENT_MOUSEUP;
 	e.mouse.button = MOUSE_BUTTON_LEFT;

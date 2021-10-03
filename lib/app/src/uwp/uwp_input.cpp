@@ -109,7 +109,7 @@ void InputDriver::OnPointerPressed(CoreWindow^ sender,
 	pd_pos_t pos;
 	touch_point_t *tp;
 
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	PointerPoint^ point = args->CurrentPoint;
 	PointerPointProperties^ pointProps = point->Properties;
 	Point position = point->Position;
@@ -157,7 +157,7 @@ void InputDriver::OnPointerMoved(CoreWindow^ sender, PointerEventArgs^ args)
 	pd_pos_t pos;
 	touch_point_t *tp;
 
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	PointerPoint^ point = args->CurrentPoint;
 	position = args->CurrentPoint->Position;
 	switch (point->PointerDevice->PointerDeviceType) {
@@ -197,7 +197,7 @@ void InputDriver::OnPointerReleased(CoreWindow^ sender, PointerEventArgs^ args)
 	pd_pos_t pos;
 	touch_point_t *tp;
 
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	PointerPoint^ point = args->CurrentPoint;
 	PointerPointProperties^ pointProps = point->Properties;
 	Point position = point->Position;
@@ -240,7 +240,7 @@ void InputDriver::OnPointerReleased(CoreWindow^ sender, PointerEventArgs^ args)
 
 void InputDriver::OnPointerWheelChanged(CoreWindow^ sender, PointerEventArgs^ args)
 {
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	PointerPoint^ point = args->CurrentPoint;
 	PointerPointProperties^ pointProps = point->Properties;
 	Point position = point->Position;
@@ -255,7 +255,7 @@ void InputDriver::OnPointerWheelChanged(CoreWindow^ sender, PointerEventArgs^ ar
 
 void InputDriver::OnKeyDown(CoreWindow^ sender, KeyEventArgs^ args)
 {
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	ev.type = APP_EVENT_KEYDOWN;
 	ev.key.ctrl_key = FALSE;
 	ev.key.shift_key = FALSE;
@@ -266,7 +266,7 @@ void InputDriver::OnKeyDown(CoreWindow^ sender, KeyEventArgs^ args)
 
 void InputDriver::OnKeyUp(CoreWindow^ sender, KeyEventArgs^ args)
 {
-	LCUI_SysEventRec ev;
+	app_event_t ev;
 	ev.type = APP_EVENT_KEYUP;
 	ev.key.ctrl_key = FALSE;
 	ev.key.shift_key = FALSE;
