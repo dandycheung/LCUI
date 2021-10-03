@@ -33,8 +33,8 @@
 #include <LCUI/display.h>
 
 static struct LCUICursorModule {
-	LCUI_Pos pos;      /* 当前帧的坐标 */
-	LCUI_Pos new_pos;  /* 下一帧将要更新的坐标 */
+	pd_pos_t pos;      /* 当前帧的坐标 */
+	pd_pos_t new_pos;  /* 下一帧将要更新的坐标 */
 	LCUI_BOOL visible; /* 是否可见 */
 	pd_canvas_t graph;  /* 游标的图形 */
 } cursor;
@@ -112,18 +112,18 @@ static uchar_t cursor_img_rgba[4][12 * 19] = {
 
 static int LCUICursor_LoadDefualtGraph(pd_canvas_t *buff)
 {
-	if (Graph_IsValid(buff)) {
+	if (pd_canvas_is_valid(buff)) {
 		pd_canvas_free(buff);
 	}
 	pd_canvas_init(buff);
 	buff->color_type = PD_COLOR_TYPE_ARGB;
-	if (Graph_Create(buff, 12, 19) != 0) {
+	if (pd_canvas_create(buff, 12, 19) != 0) {
 		return -1;
 	}
-	Graph_SetRedBits(buff, cursor_img_rgba[0], 12 * 19);
-	Graph_SetGreenBits(buff, cursor_img_rgba[1], 12 * 19);
-	Graph_SetBlueBits(buff, cursor_img_rgba[2], 12 * 19);
-	Graph_SetAlphaBits(buff, cursor_img_rgba[3], 12 * 19);
+	pd_canvas_set_red_bits(buff, cursor_img_rgba[0], 12 * 19);
+	pd_canvas_set_green_bits(buff, cursor_img_rgba[1], 12 * 19);
+	pd_canvas_set_blue_bits(buff, cursor_img_rgba[2], 12 * 19);
+	pd_canvas_set_alpha_bits(buff, cursor_img_rgba[3], 12 * 19);
 	return 0;
 }
 
@@ -157,10 +157,10 @@ void LCUICursor_GetRect(pd_rect_t *rect)
 {
 	float scale;
 	scale = LCUIMetrics_GetScale();
-	rect->x = iround(cursor.pos.x / scale);
-	rect->y = iround(cursor.pos.y / scale);
-	rect->width = iround(cursor.graph.width / scale);
-	rect->height = iround(cursor.graph.height / scale);
+	rect->x = y_iround(cursor.pos.x / scale);
+	rect->y = y_iround(cursor.pos.y / scale);
+	rect->width = y_iround(cursor.graph.width / scale);
+	rect->height = y_iround(cursor.graph.height / scale);
 }
 
 void LCUICursor_Refresh(void)
@@ -202,7 +202,7 @@ void LCUICursor_Update(void)
 }
 
 /* 设定游标的位置 */
-void LCUICursor_SetPos(LCUI_Pos pos)
+void LCUICursor_SetPos(pd_pos_t pos)
 {
 	cursor.new_pos = pos;
 }
@@ -210,12 +210,12 @@ void LCUICursor_SetPos(LCUI_Pos pos)
 /** 设置游标的图形 */
 int LCUICursor_SetGraph(pd_canvas_t *graph)
 {
-	if (Graph_IsValid(graph)) {
+	if (pd_canvas_is_valid(graph)) {
 		LCUICursor_Refresh();
-		if (Graph_IsValid(&cursor.graph)) {
+		if (pd_canvas_is_valid(&cursor.graph)) {
 			pd_canvas_free(&cursor.graph);
 		}
-		Graph_Copy(&cursor.graph, graph);
+		pd_canvas_copy(&cursor.graph, graph);
 		LCUICursor_Refresh();
 		return 0;
 	}
@@ -223,12 +223,12 @@ int LCUICursor_SetGraph(pd_canvas_t *graph)
 }
 
 /* 获取鼠标指针当前的坐标 */
-void LCUICursor_GetPos(LCUI_Pos *pos)
+void LCUICursor_GetPos(pd_pos_t *pos)
 {
 	*pos = cursor.new_pos;
 }
 
-int LCUICursor_Paint(pd_paint_context_t *paint)
+int LCUICursor_Paint(pd_paint_context_t* paint)
 {
 	int x, y;
 	if (!cursor.visible) {
@@ -236,5 +236,5 @@ int LCUICursor_Paint(pd_paint_context_t *paint)
 	}
 	x = cursor.pos.x - paint->rect.x;
 	y = cursor.pos.y - paint->rect.y;
-	return Graph_Mix(&paint->canvas, &cursor.graph, x, y, FALSE);
+	return pd_canvas_mix(&paint->canvas, &cursor.graph, x, y, FALSE);
 }
