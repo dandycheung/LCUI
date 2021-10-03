@@ -56,8 +56,8 @@ static void ui_widget_destroy_children(ui_widget_t* w)
 {
 	/* 先释放显示列表，后销毁部件列表，因为部件在这两个链表中的节点是和它共用
 	 * 一块内存空间的，销毁部件列表会把部件释放掉，所以把这个操作放在后面 */
-	LinkedList_ClearData(&w->stacking_context, NULL);
-	LinkedList_ClearData(&w->children, ui_widget_destroy);
+	list_destroy_without_node(&w->stacking_context, NULL);
+	list_destroy_without_node(&w->children, ui_widget_destroy);
 }
 
 size_t ui_trash_clear(void)
@@ -222,7 +222,7 @@ void ui_widget_empty(ui_widget_t* w)
 		child->state = LCUI_WSTATE_DELETED;
 		child->parent = NULL;
 	}
-	LinkedList_ClearData(&w->stacking_context, NULL);
+	list_destroy_without_node(&w->stacking_context, NULL);
 	LinkedList_Concat(&ui_trash, &w->children);
 	ui_widget_mark_dirty_rect(w, NULL, SV_GRAPH_BOX);
 	ui_widget_refresh_style(w);

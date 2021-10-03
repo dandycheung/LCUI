@@ -447,6 +447,6 @@ void LCUIWidget_AddTextView(void)
 
 void LCUIWidget_FreeTextView(void)
 {
-	LinkedList_ClearData(&self.list, NULL);
+	list_destroy_without_node(&self.list, NULL);
 	ui_off_event("font_face_load", textview_on_font_face_load, NULL, NULL);
 }

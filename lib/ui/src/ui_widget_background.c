@@ -118,7 +118,7 @@ void ui_widget_compute_background_style(ui_widget_t *widget)
 	}
 }
 
-void ui_widget_compute_background(ui_widget_t *w, LCUI_Background *out)
+void ui_widget_compute_background(ui_widget_t *w, pd_background_t *out)
 {
 	LCUI_StyleType type;
 	pd_rectf_t *box = &w->box.border;

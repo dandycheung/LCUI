@@ -295,7 +295,7 @@ static ui_renderer_t *ui_renderer_create(ui_widget_t *w,
 	pd_canvas_init(&that->self_graph);
 	pd_canvas_init(&that->layer_graph);
 	pd_canvas_init(&that->content_graph);
-	that->layer_graph.color_type = LCUI_COLOR_TYPE_ARGB;
+	that->layer_graph.color_type = PD_COLOR_TYPE_ARGB;
 	that->can_render_self = ui_widget_is_paintable(w);
 	if (that->can_render_self) {
 		that->self_graph.color_type = PD_COLOR_TYPE_ARGB;
@@ -375,7 +375,7 @@ static size_t ui_renderer_render_children(ui_renderer_t *that)
 	ui_widget_actual_style_t style;
 
 	/* Render the child widgets from bottom to top in stack order */
-	for (LinkedList_EachReverse(node, &that->target->stacking_context)) {
+	for (list_eachReverse(node, &that->target->stacking_context)) {
 		child = node->data;
 		if (!child->computed_style.visible ||
 		    child->state != LCUI_WSTATE_NORMAL) {

@@ -140,7 +140,7 @@ void ui_widget_update_stacking_context(ui_widget_t* w)
 	list_t* list;
 
 	list = &w->stacking_context;
-	LinkedList_ClearData(list, NULL);
+	list_destroy_without_node(list, NULL);
 	for (list_each(node, &w->children)) {
 		child = node->data;
 		s = &child->computed_style;

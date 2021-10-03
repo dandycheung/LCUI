@@ -47,7 +47,7 @@ static void ui_image_destroy(void *privdata, const void *data)
 	Graph_Free(&image->data);
 	free(image->path);
 	image->refs_count = 0;
-	LinkedList_ClearData(&image->listeners, free);
+	list_destroy_without_node(&image->listeners, free);
 	image->path = NULL;
 	free(image);
 }

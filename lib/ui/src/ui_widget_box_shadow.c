@@ -57,7 +57,7 @@ void ui_widget_compute_box_shadow_style(ui_widget_t* w)
 	}
 }
 
-void ui_widget_compute_box_shadow(ui_widget_t* w, LCUI_BoxShadow* out)
+void ui_widget_compute_box_shadow(ui_widget_t* w, pd_boxshadow_t* out)
 {
 	LCUI_BoxShadowStyle* s;
 	LCUI_BorderStyle* b;

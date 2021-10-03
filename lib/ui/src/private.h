@@ -45,7 +45,7 @@ void ui_widget_destroy_status(ui_widget_t* w);
 void ui_widget_init_background(ui_widget_t* w);
 void ui_widget_destroy_background(ui_widget_t* w);
 void ui_widget_compute_background_style(ui_widget_t* w);
-void ui_widget_compute_background(ui_widget_t* w, LCUI_Background* out);
+void ui_widget_compute_background(ui_widget_t* w, pd_background_t* out);
 void ui_widget_paint_background(ui_widget_t* w, pd_paint_context_t *paint,
 				ui_widget_actual_style_t* style);
 
@@ -62,7 +62,7 @@ void ui_widget_crop_content(ui_widget_t* w, pd_paint_context_t *paint,
 
 void ui_widget_paint_box_shadow(ui_widget_t* w, pd_paint_context_t *paint,
 				ui_widget_actual_style_t* style);
-void ui_widget_compute_box_shadow(ui_widget_t* w, LCUI_BoxShadow* out);
+void ui_widget_compute_box_shadow(ui_widget_t* w, pd_boxshadow_t* out);
 void ui_widget_compute_box_shadow_style(ui_widget_t* w);
 
 // Box

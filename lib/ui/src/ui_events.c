@@ -1,5 +1,4 @@
 ﻿#include <LCUI.h>
-#include <LCUI/input.h>
 #include <LCUI/thread.h>
 #include "../include/ui.h"
 #include "private.h"
@@ -63,7 +62,7 @@ static struct ui_events_t {
 	list_t event_mappings;
 
 	/** RBTree<int, event_mapping_t> */
-	RBTree event_names;
+	rbtree_t event_names;
 
 	/** dict_t<string, event_mapping_t> */
 	dict_t *event_ids;
@@ -159,7 +158,6 @@ void ui_event_destroy(ui_event_t* e)
 	}
 }
 
-/** 复制部件事件 */
 static int ui_event_copy(const ui_event_t* src, ui_event_t* dst)
 {
 	int n;
@@ -230,7 +228,7 @@ static void ui_touch_capturer_destroy(void* arg)
 
 INLINE ui_clear_touch_capturers(list_t* list)
 {
-	LinkedList_ClearData(list, ui_touch_capturer_destroy);
+	list_destroy_without_node(list, ui_touch_capturer_destroy);
 }
 
 static int ui_add_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
@@ -489,8 +487,8 @@ int ui_widget_emit_event(ui_widget_t* w, ui_event_t e, void* arg)
 		case UI_EVENT_MOUSEMOVE:
 		case UI_EVENT_MOUSEOVER:
 		case UI_EVENT_MOUSEOUT:
-			pointer_x = e.motion.x;
-			pointer_y = e.motion.y;
+			pointer_x = e.mouse.x;
+			pointer_y = e.mouse.y;
 			break;
 		default:
 			is_pointer_event = FALSE;
@@ -782,8 +780,6 @@ static ui_widget_t* ui_resolve_event_target(int ix, int iy)
 	return target;
 }
 
-// TODO: Convert LCUI Event to UI Event
-
 static int ui_on_mouse_event(ui_event_t* origin_event)
 {
 	float scale;
@@ -792,8 +788,7 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 
 	e.cancel_bubble = FALSE;
 	switch (e.type) {
-	case APP_EVENT_MOUSEDOWN:
-		e.type = UI_EVENT_MOUSEDOWN;
+	case UI_EVENT_MOUSEDOWN:
 		e.target = ui_resolve_event_target(e.mouse.x, e.mouse.y);
 		if (!e.target) {
 			return -1;
@@ -815,8 +810,7 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 		ui_clear_mousedown_target(target);
 		ui_set_focus(target);
 		break;
-	case APP_EVENT_MOUSEUP:
-		e.type = UI_EVENT_MOUSEUP;
+	case UI_EVENT_MOUSEUP:
 		e.target = ui_resolve_event_target(e.mouse.x, e.mouse.y);
 		if (!e.target) {
 			return -1;
@@ -851,20 +845,20 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 		}
 		ui_clear_mousedown_target(NULL);
 		break;
-	case APP_EVENT_MOUSEMOVE:
-		e.target = ui_resolve_event_target(e.motion.x, e.motion.y);
+	case UI_EVENT_MOUSEMOVE:
+		e.target = ui_resolve_event_target(e.mouse.x, e.mouse.y);
 		if (!e.target) {
 			return -1;
 		}
-		if (abs(ui_events.click.x - e.motion.x) >= 8 ||
-		    abs(ui_events.click.y - e.motion.y) >= 8) {
+		if (abs(ui_events.click.x - e.mouse.x) >= 8 ||
+		    abs(ui_events.click.y - e.mouse.y) >= 8) {
 			ui_events.click.time = 0;
 			ui_events.click.widget = NULL;
 		}
 		ui_widget_emit_event(target, e, NULL);
 		break;
 	case APP_EVENT_WHEEL:
-		e.target = ui_resolve_event_target(e.wheel.x, e.wheel.y);
+		e.target = ui_events.targets[UI_WIDGET_STATUS_HOVER];
 		if (!e.target) {
 			return -1;
 		}
@@ -902,42 +896,23 @@ static int ui_on_text_input(ui_event_t* origin_event)
 	return 0;
 }
 
-static void ui_convert_touch_point(touch_point_t *point)
-{
-	float scale;
-	switch (point->state) {
-	case APP_EVENT_TOUCHDOWN:
-		point->state = UI_EVENT_TOUCHDOWN;
-		break;
-	case APP_EVENT_TOUCHUP:
-		point->state = UI_EVENT_TOUCHUP;
-		break;
-	case APP_EVENT_TOUCHMOVE:
-		point->state = UI_EVENT_TOUCHMOVE;
-		break;
-	default:
-		break;
-	}
-	scale = ui_get_scale();
-	point->x = y_iround(point->x / scale);
-	point->y = y_iround(point->y / scale);
-}
-
 /** 分发触控事件给对应的部件 */
 static int ui_dispatch_touch_event(list_t* capturers,
-				   touch_point_t *points, int n_points)
+				   ui_touch_point_t *points, int n_points)
 {
 	int i, count;
 	float scale;
+	list_node_t *node, *ptnode;
 	ui_event_t e = { 0 };
 	ui_widget_t *target, *root, *w;
-	list_node_t *node, *ptnode;
+	ui_touch_point_t *point;
+	ui_touch_capturer_t *tc;
 
 	root = ui_root();
 	scale = ui_get_scale();
 	e.type = UI_EVENT_TOUCH;
 	e.cancel_bubble = FALSE;
-	e.touch.points = NEW(LCUI_TouchPointRec, n_points);
+	e.touch.points = malloc(sizeof(ui_touch_point_t) * n_points);
 	/* 先将各个触点按命中的部件进行分组 */
 	for (i = 0; i < n_points; ++i) {
 		target = ui_widget_at(root, y_iround(points[i].x / scale),
@@ -959,16 +934,13 @@ static int ui_dispatch_touch_event(list_t* capturers,
 	e.touch.n_points = 0;
 	/* 然后向命中的部件发送触控事件 */
 	for (list_each(node, capturers)) {
-		ui_touch_capturer_t* tc = node->data;
+		tc = node->data;
 		for (i = 0; i < n_points; ++i) {
 			for (list_each(ptnode, &tc->points)) {
-				touch_point_t *point;
 				if (points[i].id != *(int*)ptnode->data) {
 					continue;
 				}
-				point = &e.touch.points[e.touch.n_points];
-				*point = points[i];
-				ui_convert_touch_point(point);
+				e.touch.points[e.touch.n_points] = points[i];
 				++e.touch.n_points;
 			}
 		}
@@ -979,7 +951,7 @@ static int ui_dispatch_touch_event(list_t* capturers,
 		e.touch.n_points = 0;
 		++count;
 	}
-	free(e.touch.points);
+	ui_event_destroy(&e);
 	return count;
 }
 
@@ -987,8 +959,8 @@ static int ui_on_touch_event(ui_event_t* e)
 {
 	int i, n;
 	list_t capturers;
-	touch_point_t *points;
 	list_node_t *node, *ptnode;
+	ui_touch_point_t *points;
 
 	n = e->touch.n_points;
 	points = e->touch.points;
@@ -1082,7 +1054,7 @@ void ui_widget_destroy_listeners(ui_widget_t* w)
 	ui_widget_release_touch_capture(w, -1);
 	ui_clear_event_target(w);
 	if (w->listeners) {
-		LinkedList_ClearData(w->listeners, ui_event_listener_destroy);
+		list_destroy_without_node(w->listeners, ui_event_listener_destroy);
 		free(w->listeners);
 		w->listeners = NULL;
 	}
@@ -1101,7 +1073,7 @@ void ui_init_events(void)
 			 { UI_EVENT_MOUSEDOWN, "mousedown" },
 			 { UI_EVENT_MOUSEUP, "mouseup" },
 			 { UI_EVENT_MOUSEMOVE, "mousemove" },
-			 { UI_EVENT_MOUSEWHEEL, "mousewheel" },
+			 { UI_EVENT_WHEEL, "mousewheel" },
 			 { UI_EVENT_CLICK, "click" },
 			 { UI_EVENT_DBLCLICK, "dblclick" },
 			 { UI_EVENT_MOUSEOUT, "mouseout" },
@@ -1149,7 +1121,7 @@ void ui_init_events(void)
 int ui_dispatch_event(ui_event_t* e)
 {
 	switch (e->type) {
-	case UI_EVENT_MOUSEWHEEL:
+	case UI_EVENT_WHEEL:
 	case UI_EVENT_MOUSEDOWN:
 	case UI_EVENT_MOUSEMOVE:
 	case UI_EVENT_MOUSEUP:
@@ -1183,7 +1155,7 @@ void ui_process_events(void)
 					     pack->data);
 		}
 	}
-	LinkedList_ClearData(&queue, ui_event_pack_destroy);
+	list_destroy_without_node(&queue, ui_event_pack_destroy);
 }
 
 void ui_destroy_events(void)
@@ -1192,7 +1164,7 @@ void ui_destroy_events(void)
 	RBTree_Destroy(&ui_events.event_names);
 	dict_destroy(ui_events.event_ids);
 	ui_clear_touch_capturers(&ui_events.touch_capturers);
-	LinkedList_ClearData(&ui_events.queue, ui_event_pack_destroy);
+	list_destroy_without_node(&ui_events.queue, ui_event_pack_destroy);
 	list_destroy(&ui_events.event_mappings, ui_event_mapping_destroy);
 	LCUIMutex_Unlock(&ui_events.mutex);
 	LCUIMutex_Destroy(&ui_events.mutex);

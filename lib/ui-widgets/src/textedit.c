@@ -34,7 +34,6 @@
 #include <LCUI.h>
 #include <LCUI/graph.h>
 #include <LCUI/font.h>
-#include <LCUI/input.h>
 #include <LCUI/thread.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/css_parser.h>

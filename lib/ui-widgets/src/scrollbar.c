@@ -269,7 +269,7 @@ static void ScrollBarThumb_OnMouseMove(ui_widget_t* thumb, ui_event_t* e,
 		size = thumb->parent->box.content.height - thumb->height;
 		x = 0;
 		y = scrollbar->thumb_y + e->mouse.y - scrollbar->mouse_y;
-		y = y_max(0, y_miny, size));
+		y = y_max(0, y_min(y, size));
 		layer_pos = (float)((scrollbar->target->box.outer.height -
 			     box->box.content.height) *
 			    y_max(0, y_min(y / size, 1.0)));
