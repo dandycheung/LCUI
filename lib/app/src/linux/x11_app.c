@@ -481,7 +481,7 @@ static void x11_app_window_present(app_window_t *wnd)
 	pd_rect_t *rect;
 
 	list_create(&rects);
-	LinkedList_Concat(&rects, &wnd->rects);
+	list_concat(&rects, &wnd->rects);
 	for (list_each(node, &rects)) {
 		rect = node->data;
 		XPutImage(x11_app.display, wnd->window, wnd->gc, wnd->ximage,

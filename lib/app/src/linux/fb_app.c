@@ -374,7 +374,7 @@ static void fb_app_window_present(app_window_t *wnd)
 	list_t rects;
 
 	list_create(&rects);
-	LinkedList_Concat(&rects, &wnd->rects);
+	list_concat(&rects, &wnd->rects);
 	for (list_each(node, &rects)) {
 		fb_app_window_sync_rect(surface, node->data);
 	}
