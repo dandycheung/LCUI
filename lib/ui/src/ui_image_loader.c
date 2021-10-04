@@ -169,7 +169,7 @@ void ui_process_image_events(void)
 	list_t events = ui_image_loader.events;
 
 	list_create(&events);
-	LinkedList_Concat(&events, &ui_image_loader.events);
+	list_concat(&events, &ui_image_loader.events);
 	for (list_each(node, &ui_image_loader.events)) {
 		ui_image_event_t *e = node->data;
 		e->handler(e->image, e->data);

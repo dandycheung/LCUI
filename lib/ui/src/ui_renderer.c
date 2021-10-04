@@ -375,15 +375,15 @@ static size_t ui_renderer_render_children(ui_renderer_t *that)
 	ui_widget_actual_style_t style;
 
 	/* Render the child widgets from bottom to top in stack order */
-	for (list_eachReverse(node, &that->target->stacking_context)) {
+	for (list_each_reverse(node, &that->target->stacking_context)) {
 		child = node->data;
 		if (!child->computed_style.visible ||
 		    child->state != LCUI_WSTATE_NORMAL) {
 			continue;
 		}
-		if (that->target->rules &&
-		    that->target->rules->max_render_children_count &&
-		    count > that->target->rules->max_render_children_count) {
+		if (that->target->extra &&
+		    that->target->extra->rules.max_render_children_count &&
+		    count > that->target->extra->rules.max_render_children_count) {
 			break;
 		}
 		/*

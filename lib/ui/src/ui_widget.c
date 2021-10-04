@@ -48,7 +48,7 @@ static void ui_widget_destroy(ui_widget_t* w)
 	ui_widget_destroy_attributes(w);
 	ui_widget_destroy_classes(w);
 	ui_widget_destroy_status(w);
-	ui_widget_set_rules(w, NULL);
+	free(w->extra);
 	free(w);
 }
 
@@ -197,6 +197,25 @@ void ui_widget_bind_property(ui_widget_t* w, const char *name, LCUI_Object value
 	}
 }
 
+ui_widget_extra_data_t *ui_create_extra_data(ui_widget_t *widget)
+{
+	widget->extra = malloc(sizeof(ui_widget_extra_data_t));
+	if (!widget->extra) {
+		return NULL;
+	}
+	list_create(&widget->extra->listeners);
+	widget->extra->rules.only_on_visible = FALSE;
+	widget->extra->rules.first_update_visible_children = FALSE;
+	widget->extra->rules.cache_children_style = FALSE;
+	widget->extra->rules.ignore_classes_change = FALSE;
+	widget->extra->rules.ignore_status_change = FALSE;
+	widget->extra->rules.max_update_children_count = FALSE;
+	widget->extra->rules.max_render_children_count = FALSE;
+	widget->extra->rules.on_update_progress = FALSE;
+	widget->extra->observer = NULL;
+	return widget->extra;
+}
+
 void ui_widget_empty(ui_widget_t* w)
 {
 	ui_widget_t* root = w;
@@ -223,7 +242,7 @@ void ui_widget_empty(ui_widget_t* w)
 		child->parent = NULL;
 	}
 	list_destroy_without_node(&w->stacking_context, NULL);
-	LinkedList_Concat(&ui_trash, &w->children);
+	list_concat(&ui_trash, &w->children);
 	ui_widget_mark_dirty_rect(w, NULL, SV_GRAPH_BOX);
 	ui_widget_refresh_style(w);
 }

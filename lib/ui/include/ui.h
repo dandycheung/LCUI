@@ -1,6 +1,7 @@
 ﻿#ifndef LIB_UI_H
 #define LIB_UI_H
 
+#include <LCUI_Build.h>
 #include <LCUI/types.h>
 #include <yutil.h>
 #include <LCUI/gui/css_library.h>
@@ -292,6 +293,9 @@ typedef struct ui_widget_data_t {
 	ui_widget_data_entry_t *list;
 } ui_widget_data_t;
 
+
+// Event begin
+
 typedef enum ui_event_type_t {
 	UI_EVENT_NONE,
 	UI_EVENT_LINK,
@@ -405,6 +409,36 @@ struct ui_event_t {
 	};
 };
 
+// Event end
+
+
+// MutationObserver begin
+
+typedef list_t ui_mutation_list_t;
+
+typedef (*ui_mutation_observer_callback_t)(ui_mutation_list_t *,
+					   ui_mutation_observer_t *, void *);
+
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/MutationObserverInit
+ */
+typedef struct ui_mutation_observer_init_t {
+	LCUI_BOOL child_list;
+	LCUI_BOOL subtree;
+	LCUI_BOOL properties;
+} ui_mutation_observer_init_t;
+
+typedef struct ui_mutation_observer_t  ui_mutation_observer_t;
+
+// MutationObserver end
+
+
+typedef struct ui_widget_extra_data_t {
+	ui_widget_rules_t rules;
+	ui_widget_listeners_t listeners;
+	ui_mutation_observer_t *observer;
+} ui_widget_extra_data_t;
+
 struct ui_widget_t {
 	unsigned hash;
 	ui_widget_state_t state;
@@ -447,6 +481,7 @@ struct ui_widget_t {
 
 	/** Some data bound to the prototype */
 	ui_widget_data_t data;
+	ui_widget_extra_data_t *extra;
 
 	/**
 	 * Prototype chain
@@ -456,8 +491,6 @@ struct ui_widget_t {
 	const ui_widget_prototype_t* proto;
 
 	ui_widget_update_t update;
-	ui_widget_rules_t *rules;
-	ui_widget_listeners_t *listeners;
 
 	pd_rectf_t dirty_rect;
 	ui_dirty_rect_type_t dirty_rect_type;
@@ -588,6 +621,15 @@ LCUI_API void* ui_widget_get_data(ui_widget_t* widget,
 LCUI_API void* ui_widget_add_data(ui_widget_t* widget,
 				  ui_widget_prototype_t* proto,
 				  size_t data_size);
+
+// Extra Data
+
+LCUI_API ui_widget_extra_data_t *ui_create_extra_data(ui_widget_t *widget);
+
+INLINE ui_widget_extra_data_t *ui_widget_use_extra_data(ui_widget_t *widget)
+{
+	return widget->extra || ui_create_extra_data(widget);
+}
 
 // Attributes
 

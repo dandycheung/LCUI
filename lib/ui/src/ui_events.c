@@ -279,8 +279,7 @@ static int ui_add_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
 	return 0;
 }
 
-static int ui_remove_touch_capturer(list_t* list, ui_widget_t* w,
-				    int point_id)
+static int ui_remove_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
 {
 	ui_touch_capturer_t* tc = NULL;
 	list_node_t *node, *ptnode;
@@ -324,13 +323,7 @@ int ui_widget_add_event_listener(ui_widget_t* w, int event_id,
 	listener->data = data;
 	listener->event_id = event_id;
 	listener->destroy_data = destroy_data;
-	if (!w->listeners) {
-		w->listeners = malloc(sizeof(ui_widget_listeners_t));
-		if (!w->listeners) {
-			return -ENOMEM;
-		}
-	}
-	list_append_node(w->listeners, &listener->node);
+	list_append_node(&widget_use_extra_data(w)->listeners, &listener->node);
 	return 0;
 }
 
@@ -349,17 +342,17 @@ int ui_widget_remove_event_listener(ui_widget_t* w, int event_id,
 	list_node_t *node, *prev;
 	ui_event_listener_t* listener;
 
-	if (!w->listeners) {
+	if (!w->extra) {
 		return 0;
 	}
-	for (list_each(node, w->listeners)) {
+	for (list_each(node, &w->extra->listeners)) {
 		listener = node->data;
 		if (listener->event_id != event_id ||
 		    (handler && handler != listener->handler)) {
 			continue;
 		}
 		prev = node->prev;
-		list_unlink(w->listeners, node);
+		list_unlink(&w->extra->listeners, node);
 		ui_event_listener_destroy(listener);
 		node = prev;
 		count++;
@@ -397,17 +390,16 @@ static ui_widget_t* ui_widget_get_next_at(ui_widget_t* widget, int x, int y)
 	return NULL;
 }
 
-static int ui_widget_call_listeners(ui_widget_t* w, ui_event_t e,
-				    void* arg)
+static int ui_widget_call_listeners(ui_widget_t* w, ui_event_t e, void* arg)
 {
 	int count = 0;
 	list_node_t* node;
 	ui_event_listener_t* listener;
 
-	if (!w->listeners) {
+	if (!w->extra) {
 		return count;
 	}
-	for (list_each(node, w->listeners)) {
+	for (list_each(node, &w->extra->listeners)) {
 		listener = node->data;
 		if (listener->event_id != e.type) {
 			continue;
@@ -471,7 +463,7 @@ int ui_widget_emit_event(ui_widget_t* w, ui_event_t e, void* arg)
 	if (!w->parent || e.cancel_bubble) {
 		return -1;
 	}
-	while (w->listeners && w->computed_style.pointer_events == SV_NONE) {
+	while (w->extra && w->computed_style.pointer_events == SV_NONE) {
 		ui_widget_t* w;
 		LCUI_BOOL is_pointer_event = TRUE;
 		int pointer_x, pointer_y;
@@ -897,16 +889,16 @@ static int ui_on_text_input(ui_event_t* origin_event)
 }
 
 /** 分发触控事件给对应的部件 */
-static int ui_dispatch_touch_event(list_t* capturers,
-				   ui_touch_point_t *points, int n_points)
+static int ui_dispatch_touch_event(list_t* capturers, ui_touch_point_t* points,
+				   int n_points)
 {
 	int i, count;
 	float scale;
 	list_node_t *node, *ptnode;
 	ui_event_t e = { 0 };
 	ui_widget_t *target, *root, *w;
-	ui_touch_point_t *point;
-	ui_touch_capturer_t *tc;
+	ui_touch_point_t* point;
+	ui_touch_capturer_t* tc;
 
 	root = ui_root();
 	scale = ui_get_scale();
@@ -960,7 +952,7 @@ static int ui_on_touch_event(ui_event_t* e)
 	int i, n;
 	list_t capturers;
 	list_node_t *node, *ptnode;
-	ui_touch_point_t *points;
+	ui_touch_point_t* points;
 
 	n = e->touch.n_points;
 	points = e->touch.points;
@@ -1053,10 +1045,9 @@ void ui_widget_destroy_listeners(ui_widget_t* w)
 	ui_widget_release_mouse_capture(w);
 	ui_widget_release_touch_capture(w, -1);
 	ui_clear_event_target(w);
-	if (w->listeners) {
-		list_destroy_without_node(w->listeners, ui_event_listener_destroy);
-		free(w->listeners);
-		w->listeners = NULL;
+	if (w->extra) {
+		list_destroy_without_node(&w->extra->listeners,
+					  ui_event_listener_destroy);
 	}
 }
 
@@ -1147,7 +1138,7 @@ void ui_process_events(void)
 	ui_event_pack_t* pack;
 
 	list_create(&queue);
-	LinkedList_Concat(&queue, &ui_events.queue);
+	list_concat(&queue, &ui_events.queue);
 	for (list_each(node, &queue)) {
 		pack = node->data;
 		if (pack->widget) {
@@ -1161,7 +1152,7 @@ void ui_process_events(void)
 void ui_destroy_events(void)
 {
 	LCUIMutex_Lock(&ui_events.mutex);
-	RBTree_Destroy(&ui_events.event_names);
+	rbtree_destroy(&ui_events.event_names);
 	dict_destroy(ui_events.event_ids);
 	ui_clear_touch_capturers(&ui_events.touch_capturers);
 	list_destroy_without_node(&ui_events.queue, ui_event_pack_destroy);

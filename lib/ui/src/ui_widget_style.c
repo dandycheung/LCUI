@@ -495,7 +495,7 @@ LCUI_Selector ui_widget_create_selector(ui_widget_t* w)
 		Selector_Delete(s);
 		return NULL;
 	}
-	for (list_eachReverse(node, &list)) {
+	for (list_each_reverse(node, &list)) {
 		parent = node->data;
 		s->nodes[i] = ui_widget_create_selector_node(parent);
 		s->rank += s->nodes[i]->rank;
