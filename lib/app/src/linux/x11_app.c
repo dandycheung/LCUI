@@ -288,7 +288,7 @@ static void x11_app_window_activate(app_window_t *wnd)
 	x11_app_window_show(wnd);
 }
 
-static app_window_t *x11_app_create_window(const wchar_t *title, int x, int y,
+static app_window_t *x11_app_window_create(const wchar_t *title, int x, int y,
 					   int width, int height,
 					   app_window_t *parent)
 {
@@ -495,7 +495,7 @@ static void x11_app_present(void)
 {
 	list_node_t *node;
 
-	for (list_each(node, &rects)) {
+	for (list_each(node, &x11_app.windows)) {
 		x11_app_window_present(node->data);
 	}
 }

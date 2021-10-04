@@ -158,7 +158,7 @@ static void fb_app_init_canvas(void)
 	memset(fbapp.canvas.bytes, 0, fbapp.canvas.mem_size);
 }
 
-static void fb_app_create_window(const wchar_t *title, int x, int y,
+static void fb_app_window_create(const wchar_t *title, int x, int y,
 				       int width, int height,
 				       app_window_t *parent)
 {
@@ -446,7 +446,7 @@ void fb_app_driver_init(app_driver_t *dirver)
 	driver->destroy = fb_app_destroy;
 	driver->get_screen_width = fb_app_get_screen_width;
 	driver->get_screen_height = fb_app_get_screen_height;
-	driver->create_window = fb_app_create_window;
+	driver->create_window = fb_app_window_create;
 }
 
 void fb_app_window_driver_init(app_window_driver_t *driver)

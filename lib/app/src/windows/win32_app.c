@@ -35,9 +35,11 @@ static struct app_t {
 	const wchar_t *class_name;
 	HINSTANCE main_instance;
 	HINSTANCE dll_instance;
+
+	/** list_t<app_window_t*> */
 	list_t windows;
 
-	/** list_t<app_native_event_listener_t> */
+	/** list_t<app_native_event_listener_t*> */
 	list_t native_listeners;
 } win32_app;
 
@@ -316,7 +318,7 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 	app_process_event(&e);
 }
 
-app_window_t *app_create_window(const wchar_t *title, int x, int y, int width,
+app_window_t *app_window_create(const wchar_t *title, int x, int y, int width,
 				int height, app_window_t *parent)
 {
 	app_window_t *wnd;
@@ -359,6 +361,16 @@ app_window_t *app_create_window(const wchar_t *title, int x, int y, int width,
 	wnd->hdc_fb = CreateCompatibleDC(wnd->hdc_client);
 	LinkedList_AppendNode(&win32_app.windows, &wnd->node);
 	return wnd;
+}
+
+void app_window_set_fullscreen(app_window_t *wnd, LCUI_BOOL fullscreen)
+{
+	// TODO:
+}
+
+void app_window_activate(app_window_t *wnd)
+{
+	SetActiveWindow(wnd->hwnd);
 }
 
 void app_window_close(app_window_t *wnd)
@@ -513,6 +525,15 @@ void app_set_instance(void *instance)
 app_id_t app_get_id(void)
 {
 	return APP_ID_WIN32;
+}
+
+void app_present(void)
+{
+	list_node_t *node;
+
+	for (list_each(node, &win32_app.windows)) {
+		x11_app_window_present(node->data);
+	}
 }
 
 int app_init_engine(const wchar_t *name)
