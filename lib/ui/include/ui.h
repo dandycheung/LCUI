@@ -2,7 +2,7 @@
 #define LIB_UI_H
 
 #include <LCUI/types.h>
-#include <LCUI/util/strlist.h>
+#include <yutil.h>
 #include <LCUI/gui/css_library.h>
 #include <LCUI/gui/css_parser.h>
 
@@ -76,8 +76,8 @@ typedef struct ui_widget_actual_style_t_ {
 	pd_rect_t padding_box;
 	pd_rect_t content_box;
 	pd_border_t border;
-	LCUI_BoxShadow shadow;
-	LCUI_Background background;
+	pd_boxshadow_t shadow;
+	pd_background_t background;
 } ui_widget_actual_style_t;
 
 typedef enum ui_task_type_t {
@@ -292,37 +292,36 @@ typedef struct ui_widget_data_t {
 	ui_widget_data_entry_t *list;
 } ui_widget_data_t;
 
-/** 部件事件类型枚举 */
 typedef enum ui_event_type_t {
 	UI_EVENT_NONE,
-	UI_EVENT_LINK,		/**< link widget node to the parent widget children list */
-	UI_EVENT_UNLINK,		/**< unlink widget node from the parent widget children list */
-	UI_EVENT_READY,		/**< after widget initial layout was completed */
-	UI_EVENT_DESTROY,		/**< before destroy */
-	UI_EVENT_MOVE,		/**< 在移动位置时 */
-	UI_EVENT_RESIZE,		/**< 改变尺寸 */
-	UI_EVENT_SHOW,		/**< 显示 */
-	UI_EVENT_HIDE,		/**< 隐藏 */
-	UI_EVENT_FOCUS,		/**< 获得焦点 */
-	UI_EVENT_BLUR,		/**< 失去焦点 */
-	UI_EVENT_AFTERLAYOUT,	/**< 在子部件布局完成后 */
-	UI_EVENT_KEYDOWN,		/**< 按键按下 */
-	UI_EVENT_KEYUP,		/**< 按键释放 */
-	UI_EVENT_KEYPRESS,		/**< 按键字符输入 */
-	UI_EVENT_TEXTINPUT,		/**< 文本输入 */
+	UI_EVENT_LINK,
+	UI_EVENT_UNLINK,
+	UI_EVENT_READY,
+	UI_EVENT_DESTROY,
+	UI_EVENT_MOVE,
+	UI_EVENT_RESIZE,
+	UI_EVENT_SHOW,
+	UI_EVENT_HIDE,
+	UI_EVENT_FOCUS,
+	UI_EVENT_BLUR,
+	UI_EVENT_AFTERLAYOUT,
+	UI_EVENT_KEYDOWN,
+	UI_EVENT_KEYUP,
+	UI_EVENT_KEYPRESS,
+	UI_EVENT_TEXTINPUT,
 
-	UI_EVENT_MOUSEOVER,		/**< 鼠标在部件上 */
-	UI_EVENT_MOUSEMOVE,		/**< 鼠标在部件上移动 */
-	UI_EVENT_MOUSEOUT,		/**< 鼠标从部件上移开 */
-	UI_EVENT_MOUSEDOWN,		/**< 鼠标按键按下 */
-	UI_EVENT_MOUSEUP,		/**< 鼠标按键释放 */
-	UI_EVENT_MOUSEWHEEL,		/**< 鼠标滚轮滚动时 */
-	UI_EVENT_CLICK,		/**< 鼠标单击 */
-	UI_EVENT_DBLCLICK,		/**< 鼠标双击 */
-	UI_EVENT_TOUCH,		/**< 触控 */
-	UI_EVENT_TOUCHDOWN,		/**< 触点按下 */
-	UI_EVENT_TOUCHUP,		/**< 触点释放 */
-	UI_EVENT_TOUCHMOVE,		/**< 触点移动 */
+	UI_EVENT_MOUSEOVER,
+	UI_EVENT_MOUSEMOVE,
+	UI_EVENT_MOUSEOUT,
+	UI_EVENT_MOUSEDOWN,
+	UI_EVENT_MOUSEUP,
+	UI_EVENT_WHEEL,
+	UI_EVENT_CLICK,
+	UI_EVENT_DBLCLICK,
+	UI_EVENT_TOUCH,
+	UI_EVENT_TOUCHDOWN,
+	UI_EVENT_TOUCHUP,
+	UI_EVENT_TOUCHMOVE,
 
 	UI_EVENT_TITLE,
 	UI_EVENT_FONT_FACE_LOAD,
@@ -330,12 +329,65 @@ typedef enum ui_event_type_t {
 	UI_EVENT_USER
 } ui_event_type_t;
 
-/* 部件的事件数据结构和系统事件一样 */
-typedef app_mouse_event_t ui_mouse_event_t;
-typedef app_wheel_event_t ui_wheel_event_t;
-typedef app_textinput_event_t ui_textinput_event_t;
-typedef app_keyboard_event_t ui_keyboard_event_t;
-typedef app_touch_event_t ui_touch_event_t;
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
+ */
+typedef struct ui_keyboard_event_t {
+	int code;
+	LCUI_BOOL alt_key;
+	LCUI_BOOL ctrl_key;
+	LCUI_BOOL shift_key;
+	LCUI_BOOL meta_key;
+	LCUI_BOOL is_composing;
+} ui_keyboard_event_t;
+
+typedef struct ui_touch_point_t {
+	float x;
+	float y;
+	int id;
+	int state;
+	LCUI_BOOL is_primary;
+} ui_touch_point_t;
+
+typedef struct ui_touch_event_t {
+	unsigned n_points;
+	ui_touch_point_t *points;
+} ui_touch_event_t;
+
+typedef struct ui_paint_event_t {
+	pd_rect_t rect;
+} ui_paint_event_t;
+
+typedef struct ui_textinput_event_t {
+	wchar_t *text;
+	size_t length;
+} ui_textinput_event_t;
+
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
+ */
+typedef struct ui_mouse_event_t {
+	float x;
+	float y;
+	int button;
+} ui_mouse_event_t;
+
+typedef enum ui_wheel_delta_mode_t {
+	UI_WHEEL_DELTA_PIXEL = 0,
+	UI_WHEEL_DELTA_LINE,
+	UI_WHEEL_DELTA_PAGE
+} ui_wheel_delta_mode_t;
+
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent
+ */
+typedef struct ui_wheel_event_t {
+	int delta_x;
+	int delta_y;
+	int delta_z;
+	int delta_mode;
+} ui_wheel_event_t;
+
 typedef struct ui_event_t ui_event_t;
 typedef void(*ui_event_handler_t)(ui_widget_t*, ui_event_t*, void*);
 
@@ -441,8 +493,12 @@ struct ui_widget_t {
 
 /* clang-format on */
 
+// Base
+
 LCUI_API void ui_init(void);
 LCUI_API void ui_destroy(void);
+LCUI_API int ui_dispatch_event(ui_event_t* e);
+LCUI_API void ui_process_events(void);
 
 // Metrics
 
@@ -509,18 +565,15 @@ LCUI_API void ui_widget_get_offset(ui_widget_t* w, ui_widget_t* parent,
 				   float* offset_x, float* offset_y);
 LCUI_API LCUI_BOOL ui_widget_in_viewport(ui_widget_t* w);
 
-
 // Root
 
 LCUI_API ui_widget_t* ui_root(void);
 LCUI_API int ui_root_append(ui_widget_t* w);
 
-
 // Id
 
 LCUI_API ui_widget_t* ui_get_widget(const char* id);
 LCUI_API int ui_widget_set_id(ui_widget_t* w, const char* idstr);
-
 
 // Prototype
 
@@ -552,16 +605,14 @@ LCUI_API int ui_widget_add_class(ui_widget_t* w, const char* class_name);
 LCUI_API LCUI_BOOL ui_widget_has_class(ui_widget_t* w, const char* class_name);
 LCUI_API int ui_widget_remove_class(ui_widget_t* w, const char* class_name);
 
-
-
 // Status
 
-LCUI_API int ui_widget_add_status(ui_widget_t* w, const char *status_name);
-LCUI_API LCUI_BOOL ui_widget_has_status(ui_widget_t* w, const char *status_name);
-LCUI_API int ui_widget_remove_status(ui_widget_t* w, const char *status_name);
+LCUI_API int ui_widget_add_status(ui_widget_t* w, const char* status_name);
+LCUI_API LCUI_BOOL ui_widget_has_status(ui_widget_t* w,
+					const char* status_name);
+LCUI_API int ui_widget_remove_status(ui_widget_t* w, const char* status_name);
 LCUI_API void ui_widget_update_status(ui_widget_t* widget);
 LCUI_API void ui_widget_set_disabled(ui_widget_t* w, LCUI_BOOL disabled);
-
 
 // Tree
 
@@ -592,7 +643,7 @@ LCUI_API void ui_widget_print_tree(ui_widget_t* w);
 		ui_widget_add_task_by_style(W, K); \
 	} while (0)
 
-INLINE LCUI_BOOL ui_widget_is_visible(ui_widget_t *w)
+INLINE LCUI_BOOL ui_widget_is_visible(ui_widget_t* w)
 {
 	return w->computed_style.visible;
 }
@@ -626,7 +677,7 @@ LCUI_API void ui_refresh_style(void);
 
 // Helper
 
-INLINE LCUI_BOOL Widget_IsVisible(ui_widget_t *w)
+INLINE LCUI_BOOL Widget_IsVisible(ui_widget_t* w)
 {
 	return w->computed_style.visible;
 }
@@ -681,32 +732,30 @@ LCUI_API size_t ui_widget_import_hash(ui_widget_t* w, unsigned* hash_list,
 LCUI_API void ui_widget_reflow(ui_widget_t* w, ui_layout_rule_t rule);
 LCUI_API LCUI_BOOL ui_widget_auto_reflow(ui_widget_t* w, ui_layout_rule_t rule);
 
-
 // Renderer
 
 LCUI_API LCUI_BOOL ui_widget_mark_dirty_rect(ui_widget_t* w,
 					     pd_rectf_t* in_rect, int box_type);
 LCUI_API size_t ui_widget_get_dirty_rects(ui_widget_t* w, list_t* rects);
-LCUI_API size_t ui_widget_render(ui_widget_t* w, pd_paint_context_t *paint);
-
+LCUI_API size_t ui_widget_render(ui_widget_t* w, pd_paint_context_t* paint);
 
 // Updater
 
-LCUI_API int ui_widget_set_rules(ui_widget_t* w, const ui_widget_rules_t* rules);
+LCUI_API int ui_widget_set_rules(ui_widget_t* w,
+				 const ui_widget_rules_t* rules);
 LCUI_API void ui_widget_add_task_for_children(ui_widget_t* widget,
 					      ui_task_type_t task);
 LCUI_API void ui_widget_add_task(ui_widget_t* widget, int task);
 
-INLINE void ui_widget_refresh_style(ui_widget_t *w)
+INLINE void ui_widget_refresh_style(ui_widget_t* w)
 {
 	ui_widget_add_task(w, UI_TASK_REFRESH_STYLE);
 }
 
-INLINE void ui_widget_update_style(ui_widget_t *w)
+INLINE void ui_widget_update_style(ui_widget_t* w)
 {
 	ui_widget_add_task(w, UI_TASK_UPDATE_STYLE);
 }
-
 
 // Events
 
@@ -717,8 +766,8 @@ INLINE ui_widget_block_event(ui_widget_t* w, LCUI_BOOL block)
 }
 
 /** 触发事件，让事件处理器在主循环中调用 */
-LCUI_API int ui_widget_post_event(ui_widget_t* w, const ui_event_t *e, void* arg,
-				  void (*destroy_data)(void*));
+LCUI_API int ui_widget_post_event(ui_widget_t* w, const ui_event_t* e,
+				  void* arg, void (*destroy_data)(void*));
 
 /** 触发事件，直接调用事件处理器 */
 LCUI_API int ui_widget_emit_event(ui_widget_t* w, ui_event_t e, void* arg);
@@ -781,7 +830,8 @@ INLINE int ui_emit_event(ui_event_t e, void* arg)
 	return ui_widget_emit_event(ui_root(), e, arg);
 }
 
-INLINE int ui_post_event(const ui_event_t *e, void* data, void (*destroy_data)(void*))
+INLINE int ui_post_event(const ui_event_t* e, void* data,
+			 void (*destroy_data)(void*))
 {
 	return ui_widget_post_event(ui_root(), e, data, destroy_data);
 }
@@ -856,7 +906,6 @@ LCUI_API int ui_widget_set_touch_capture(ui_widget_t* w, int point_id);
 LCUI_API int ui_widget_release_touch_capture(ui_widget_t* w, int point_id);
 
 LCUI_API void ui_widget_destroy_listeners(ui_widget_t* w);
-
 
 // CSS
 
