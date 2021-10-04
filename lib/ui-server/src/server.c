@@ -27,9 +27,6 @@ typedef struct ui_connection_t {
 	/** whether new content has been rendered */
 	LCUI_BOOL rendered;
 
-	/** dirty rectangles for rendering */
-	list_t rects;
-
 	/** flashing rect list */
 	list_t flash_rects;
 
@@ -54,7 +51,6 @@ INLINE int is_rect_equals(const pd_rect_t *a, const pd_rect_t *b)
 static void ui_connection_destroy(ui_connection_t *conn)
 {
 	app_window_close(conn->window);
-	list_destroy(&conn->rects, free);
 	list_destroy(&conn->flash_rects, free);
 	free(conn);
 }
@@ -95,7 +91,8 @@ static void ui_server_on_window_paint(app_event_t *e, void *arg)
 		if (conn && conn->window != e->window) {
 			continue;
 		}
-		RectList_Add(&conn->rects, &e->paint.rect);
+		LCUIRect_ToRectF(&e->paint.rect, &rect, ui_get_scale());
+		ui_widget_mark_dirty_rect(conn->widget, &rect, SV_GRAPH_BOX);
 	}
 }
 
@@ -185,7 +182,7 @@ static void get_rendering_layer_size(int *width, int *height)
 	*height = y_max(200, *height / ui_server.num_rendering_threads + 1);
 }
 
-static void ui_server_dump_rects(ui_connection_t *conn, list_t *rects)
+static void ui_server_dump_rects(ui_connection_t *conn, list_t *out_rects)
 {
 	int i;
 	int max_dirty;
@@ -197,7 +194,10 @@ static void ui_server_dump_rects(ui_connection_t *conn, list_t *rects)
 	ui_dirty_layer_t *layer;
 	ui_dirty_layer_t *layers;
 	list_node_t *node;
+	list_t rects;
 
+	list_create(&rects);
+	ui_widget_get_dirty_rects(conn->widget, &rects);
 	get_rendering_layer_size(&layer_width, &layer_height);
 	max_dirty = (int)(0.8 * layer_width * layer_height);
 	layers =
@@ -212,7 +212,7 @@ static void ui_server_dump_rects(ui_connection_t *conn, list_t *rects)
 		list_create(&layer->rects);
 	}
 	sub_rect = malloc(sizeof(pd_rect_t));
-	for (list_each(node, &conn->rects)) {
+	for (list_each(node, &rects)) {
 		rect = *(pd_rect_t *)node->data;
 		for (i = 0; i < ui_server.num_rendering_threads; ++i) {
 			layer = &layers[i];
@@ -236,13 +236,13 @@ static void ui_server_dump_rects(ui_connection_t *conn, list_t *rects)
 	for (i = 0; i < ui_server.num_rendering_threads; ++i) {
 		layer = &layers[i];
 		if (layer->dirty >= max_dirty) {
-			RectList_AddEx(rects, &layer->rect, FALSE);
+			RectList_AddEx(out_rects, &layer->rect, FALSE);
 			RectList_Clear(&layer->rects);
 		} else {
-			list_concat(rects, &layer->rects);
+			list_concat(out_rects, &layer->rects);
 		}
 	}
-	RectList_Clear(&conn->rects);
+	RectList_Clear(&rects);
 	free(sub_rect);
 	free(layers);
 }
@@ -367,12 +367,13 @@ static size_t ui_server_render_window(ui_connection_t *conn)
 
 	list_create(&rects);
 	get_rendering_layer_size(&layer_width, &layer_height);
-	ui_server_render(conn, &rects);
+	ui_server_dump_rects(conn, &rects);
 	if (rects.length < 1) {
 		return 0;
 	}
 	rect_array = (pd_rect_t **)malloc(sizeof(pd_rect_t *) * rects.length);
 	for (list_each(node, &rects)) {
+		// TODO:
 		LCUI_SysEventRec ev;
 
 		rect_array[i] = node->data;
@@ -406,20 +407,6 @@ static size_t ui_server_render_window(ui_connection_t *conn)
 	return count;
 }
 
-void ui_server_update(void)
-{
-	list_node_t *node;
-	app_window_t *window;
-	ui_connection_t *conn = NULL;
-
-	for (list_each(node, &ui_server.connections)) {
-		conn = node->data;
-		window = conn->window;
-		app_window_update(window);
-		ui_widget_get_dirty_rects(conn->widget, &conn->rects);
-	}
-}
-
 size_t ui_server_render(void)
 {
 	size_t count = 0;
@@ -430,22 +417,6 @@ size_t ui_server_render(void)
 		count += ui_server_update_flash_rects(node->data);
 	}
 	return count;
-}
-
-void ui_server_present(void)
-{
-	list_node_t *node;
-
-	for (list_each(node, &ui_server.connections)) {
-		ui_connection_t *conn = node->data;
-		app_window_t *window = conn->window;
-		if (!window || !Surface_IsReady(window)) {
-			continue;
-		}
-		if (conn->rendered) {
-			Surface_Present(window);
-		}
-	}
 }
 
 ui_widget_t *ui_server_get_widget(app_window_t *window)
@@ -476,6 +447,7 @@ static app_window_t *ui_server_get_window(ui_widget_t *widget)
 	return NULL;
 }
 
+// TODO:
 static ui_server_update_window()
 {
 	LCUIMetrics_ComputeRectActual(&rect, &widget->box.canvas);
@@ -494,7 +466,10 @@ static ui_server_update_window()
 
 void ui_server_init(void)
 {
+	app_on_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo, NULL);
+	app_on_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
 	app_on_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
+	app_on_event(APP_EVENT_PAINT, ui_server_on_window_paint, NULL);
 }
 
 void ui_server_set_threads(int threads)
@@ -509,4 +484,7 @@ void ui_server_set_paint_flashing_enabled(LCUI_BOOL enabled)
 
 void ui_server_destroy(void)
 {
+	app_off_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo, NULL);
+	app_off_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
+	app_off_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
 }
