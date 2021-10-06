@@ -2,7 +2,7 @@
 
 #include <LCUI.h>
 #include <LCUI/graph.h>
-
+#include <string.h>
 #include <app.h>
 #include <ui.h>
 
@@ -11,6 +11,20 @@
 #ifdef ENABLE_OPENMP
 #include <omp.h>
 #endif
+
+typedef struct window_mutation_record_t {
+	app_window_t *window;
+	LCUI_BOOL update_size;
+	LCUI_BOOL update_position;
+	LCUI_BOOL update_title;
+	LCUI_BOOL update_visible;
+	int x;
+	int y;
+	int width;
+	int height;
+	const wchar_t *title;
+	LCUI_BOOL visible;
+} window_mutation_record_t;
 
 typedef struct ui_flash_rect_t {
 	int64_t paint_time;
@@ -37,7 +51,7 @@ typedef struct ui_connection_t {
 static struct ui_server_t {
 	/** list_t<ui_connection_t> */
 	list_t connections;
-
+	ui_mutation_observer_t *observer;
 	LCUI_BOOL paint_flashing_enabled;
 	int num_rendering_threads;
 } ui_server;
@@ -160,16 +174,18 @@ void ui_server_connect(ui_widget_t *widget, app_window_t *window)
 {
 	pd_rect_t rect;
 	ui_connection_t *conn;
+	ui_mutation_observer_init_t options = { 0 };
 
 	conn = malloc(sizeof(ui_connection_t));
 	conn->window = window;
 	conn->widget = widget;
 	conn->rendered = FALSE;
+	options.properties = TRUE;
 	list_create(&conn->flash_rects);
 	ui_widget_mark_dirty_rect(widget, NULL, SV_GRAPH_BOX);
-	ui_widget_on(widget, "destroy", ui_server_on_destroy_widget,
-		     NULL, NULL);
-	// TODO: 添加 MutationObserver 以监听 widget 的显示、隐藏、移动、调整大小等属性变化
+	ui_widget_on(widget, "destroy", ui_server_on_destroy_widget, NULL,
+		     NULL);
+	ui_mutation_observer_observe(ui_server.observer, widget, options);
 	list_append(&ui_server.connections, conn);
 }
 
@@ -373,13 +389,7 @@ static size_t ui_server_render_window(ui_connection_t *conn)
 	}
 	rect_array = (pd_rect_t **)malloc(sizeof(pd_rect_t *) * rects.length);
 	for (list_each(node, &rects)) {
-		// TODO:
-		LCUI_SysEventRec ev;
-
 		rect_array[i] = node->data;
-		ev.type = APP_EVENT_PAINT;
-		ev.paint.rect = *rect_array[i];
-		LCUI_TriggerEvent(&ev, NULL);
 		dirty += rect_array[i]->width * rect_array[i]->height;
 		i++;
 	}
@@ -447,26 +457,108 @@ static app_window_t *ui_server_get_window(ui_widget_t *widget)
 	return NULL;
 }
 
-// TODO:
-static ui_server_update_window()
+static int window_mutation_list_add(list_t *list,
+				    ui_mutation_record_t *mutation)
 {
-	LCUIMetrics_ComputeRectActual(&rect, &widget->box.canvas);
-	if (Widget_CheckStyleValid(widget, key_top) &&
-	    Widget_CheckStyleValid(widget, key_left)) {
-		Surface_Move(conn->window, rect.x, rect.y);
+	list_node_t *node;
+	app_window_t *wnd;
+	ui_widget_t *widget = mutation->target;
+	window_mutation_record_t *wnd_mutation = NULL;
+
+	wnd = ui_server_get_window(widget);
+	if (!wnd) {
+		return -1;
 	}
-	Surface_SetCaptionW(conn->window, widget->title);
-	Surface_Resize(conn->window, rect.width, rect.height);
-	if (widget->computed_style.visible) {
-		Surface_Show(conn->window);
-	} else {
-		Surface_Hide(conn->window);
+	for (list_each(node, list)) {
+		wnd_mutation = node->data;
+		if (wnd_mutation->window == wnd) {
+			break;
+		}
+		wnd_mutation = NULL;
 	}
+	if (!wnd_mutation) {
+		wnd_mutation = malloc(sizeof(window_mutation_record_t));
+		if (!wnd_mutation) {
+			return -ENOMEM;
+		}
+		wnd_mutation->window = wnd;
+		wnd_mutation->update_position = FALSE;
+		wnd_mutation->update_size = FALSE;
+	}
+	wnd_mutation->update_title = wnd_mutation->update_title ||
+				     strcmp(mutation->property_name, "title");
+	wnd_mutation->update_visible =
+	    wnd_mutation->update_visible ||
+	    strcmp(mutation->property_name, "visible");
+	wnd_mutation->update_position =
+	    wnd_mutation->update_position ||
+	    strcmp(mutation->property_name, "x") == 0 ||
+	    strcmp(mutation->property_name, "y") == 0;
+	wnd_mutation->update_size =
+	    wnd_mutation->update_size ||
+	    strcmp(mutation->property_name, "width") == 0 ||
+	    strcmp(mutation->property_name, "height") == 0;
+	wnd_mutation->title = widget->title;
+	wnd_mutation->visible = widget->computed_style.visible;
+	wnd_mutation->width = ui_compute_actual(widget->x, LCUI_STYPE_PX);
+	wnd_mutation->height = ui_compute_actual(widget->y, LCUI_STYPE_PX);
+	wnd_mutation->width = ui_compute_actual(widget->width, LCUI_STYPE_PX);
+	wnd_mutation->height = ui_compute_actual(widget->height, LCUI_STYPE_PX);
+	return 0;
+}
+
+static void ui_server_on_widget_mutation(ui_mutation_list_t *mutation_list,
+					 ui_mutation_observer_t *observer,
+					 void *arg)
+{
+	list_node_t *node;
+	list_t wnd_mutation_list;
+	window_mutation_record_t *wnd_mutation;
+	ui_mutation_record_t *mutation;
+	app_window_t *wnd;
+
+	list_create(&wnd_mutation_list);
+	for (list_each(node, mutation_list)) {
+		mutation = node->data;
+		if (mutation->type != UI_MUTATION_RECORD_TYPE_PROPERTIES ||
+		    !mutation->property_name) {
+			continue;
+		}
+		window_mutation_list_add(wnd, mutation);
+	}
+	for (list_each(node, &wnd_mutation_list)) {
+		wnd_mutation = node->data;
+		if (wnd_mutation->update_position) {
+			app_window_set_position(wnd_mutation->window,
+						wnd_mutation->x,
+						wnd_mutation->y);
+		}
+		if (wnd_mutation->update_size) {
+			app_window_set_size(wnd_mutation->window,
+					    wnd_mutation->width,
+					    wnd_mutation->height);
+		}
+		if (wnd_mutation->update_title) {
+			app_window_set_title(wnd_mutation->window,
+					     wnd_mutation->title);
+		}
+		if (wnd_mutation->update_visible) {
+			if (wnd_mutation->visible) {
+				app_window_show(wnd_mutation->window);
+			} else {
+				app_window_hide(wnd_mutation->window);
+			}
+		}
+	}
+	list_destroy(&wnd_mutation_list, free);
 }
 
 void ui_server_init(void)
 {
-	app_on_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo, NULL);
+	ui_server.observer =
+	    ui_mutation_observer_create(ui_server_on_widget_mutation, NULL);
+	app_on_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo,
+		     NULL);
 	app_on_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
 	app_on_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
 	app_on_event(APP_EVENT_PAINT, ui_server_on_window_paint, NULL);
@@ -484,7 +576,8 @@ void ui_server_set_paint_flashing_enabled(LCUI_BOOL enabled)
 
 void ui_server_destroy(void)
 {
-	app_off_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo, NULL);
+	app_off_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo,
+		      NULL);
 	app_off_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
 	app_off_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
 }

@@ -415,6 +415,23 @@ struct ui_event_t {
 // MutationObserver begin
 
 typedef list_t ui_mutation_list_t;
+typedef struct ui_mutation_observer_t ui_mutation_observer_t;
+
+typedef enum ui_mutation_record_type_t {
+	UI_MUTATION_RECORD_TYPE_NONE,
+	UI_MUTATION_RECORD_TYPE_ATTRIBUTES,
+	UI_MUTATION_RECORD_TYPE_PROPERTIES,
+	UI_MUTATION_RECORD_TYPE_CHILD_LIST,
+} ui_mutation_record_type_t;
+
+typedef struct ui_mutation_record_t {
+	ui_mutation_record_type_t type;
+	ui_widget_t *target;
+	list_t added_widgets;
+	list_t removed_widgets;
+	char *attribute_name;
+	char *property_name;
+} ui_mutation_record_t;
 
 typedef (*ui_mutation_observer_callback_t)(ui_mutation_list_t *,
 					   ui_mutation_observer_t *, void *);
@@ -426,9 +443,29 @@ typedef struct ui_mutation_observer_init_t {
 	LCUI_BOOL child_list;
 	LCUI_BOOL subtree;
 	LCUI_BOOL properties;
+	LCUI_BOOL attributes;
 } ui_mutation_observer_init_t;
 
-typedef struct ui_mutation_observer_t  ui_mutation_observer_t;
+LCUI_API ui_mutation_record_t *ui_mutation_record_create(ui_widget_t *widget,
+						ui_mutation_record_type_t type);
+
+LCUI_API ui_mutation_record_t *ui_mutation_record_duplicate(ui_mutation_record_t *source);
+
+LCUI_API void ui_mutation_record_destroy(ui_mutation_record_t *mutation);
+
+/**
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+ */
+LCUI_API ui_mutation_observer_t *ui_mutation_observer_create(
+    ui_mutation_observer_callback_t callback, void *callback_arg);
+
+LCUI_API int ui_mutation_observer_observe(ui_mutation_observer_t *observer,
+				 ui_widget_t *w,
+				 ui_mutation_observer_init_t options);
+
+LCUI_API void ui_mutation_observer_disconnect(ui_mutation_observer_t *observer);
+LCUI_API void ui_mutation_observer_destroy(ui_mutation_observer_t *observer);
+LCUI_API void ui_process_mutation_observers(void);
 
 // MutationObserver end
 
@@ -437,6 +474,7 @@ typedef struct ui_widget_extra_data_t {
 	ui_widget_rules_t rules;
 	ui_widget_listeners_t listeners;
 	ui_mutation_observer_t *observer;
+	ui_mutation_observer_init_t observer_options;
 } ui_widget_extra_data_t;
 
 struct ui_widget_t {
@@ -533,6 +571,11 @@ LCUI_API void ui_destroy(void);
 LCUI_API int ui_dispatch_event(ui_event_t* e);
 LCUI_API void ui_process_events(void);
 
+// Trash
+
+LCUI_API size_t ui_trash_clear(void);
+LCUI_API void ui_trash_add(ui_widget_t* w);
+
 // Metrics
 
 /** 转换成单位为 px 的度量值 */
@@ -624,9 +667,9 @@ LCUI_API void* ui_widget_add_data(ui_widget_t* widget,
 
 // Extra Data
 
-LCUI_API ui_widget_extra_data_t *ui_create_extra_data(ui_widget_t *widget);
+LCUI_API ui_widget_extra_data_t* ui_create_extra_data(ui_widget_t* widget);
 
-INLINE ui_widget_extra_data_t *ui_widget_use_extra_data(ui_widget_t *widget)
+INLINE ui_widget_extra_data_t* ui_widget_use_extra_data(ui_widget_t* widget)
 {
 	return widget->extra || ui_create_extra_data(widget);
 }
@@ -799,6 +842,12 @@ INLINE void ui_widget_update_style(ui_widget_t* w)
 	ui_widget_add_task(w, UI_TASK_UPDATE_STYLE);
 }
 
+// Observer
+LCUI_API LCUI_BOOL ui_widget_has_observer(ui_widget_t* widget,
+					  ui_mutation_record_type_t type);
+
+LCUI_API int ui_widget_add_mutation_recrod(ui_widget_t* widget,
+					   ui_mutation_record_t* record);
 // Events
 
 /** 设置阻止部件及其子级部件的事件 */

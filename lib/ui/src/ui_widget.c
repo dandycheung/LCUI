@@ -4,8 +4,6 @@
 #include "../include/ui.h"
 #include "private.h"
 
-static list_t ui_trash;
-
 static void ui_widget_destroy_children(ui_widget_t* w);
 
 static void ui_widget_init(ui_widget_t* w)
@@ -60,32 +58,6 @@ static void ui_widget_destroy_children(ui_widget_t* w)
 	list_destroy_without_node(&w->children, ui_widget_destroy);
 }
 
-size_t ui_trash_clear(void)
-{
-	size_t count;
-	list_node_t *node;
-
-	node = ui_trash.head.next;
-	count = ui_trash.length;
-	while (node) {
-		list_node_t *next = node->next;
-		list_unlink(&ui_trash, node);
-		ui_widget_destroy(node->data);
-		node = next;
-	}
-	return count;
-}
-
-static void ui_trash_add(ui_widget_t *w)
-{
-	w->state = LCUI_WSTATE_DELETED;
-	if (ui_widget_unlink(w) != 0) {
-		return;
-	}
-	list_append_node(&ui_trash, &w->node);
-	ui_widget_post_surface_event(w, UI_EVENT_UNLINK, TRUE);
-}
-
 ui_widget_t* ui_create_widget(const char* type)
 {
 	ui_widget_t* widget = malloc(sizeof(ui_widget_t));
@@ -112,40 +84,6 @@ ui_widget_t* ui_create_widget_with_prototype(const ui_widget_prototype_t* proto)
 	widget->proto->init(widget);
 	ui_widget_add_task(widget, UI_TASK_REFRESH_STYLE);
 	return widget;
-}
-
-void ui_widget_remove(ui_widget_t* w)
-{
-	ui_widget_t* root = w;
-
-	assert(w->state != LCUI_WSTATE_DELETED);
-	while (root->parent) {
-		root = root->parent;
-	}
-	/* If this widget is not mounted in the root widget tree */
-	if (root != ui_root()) {
-		w->state = LCUI_WSTATE_DELETED;
-		ui_widget_destroy(w);
-		return;
-	}
-	if (w->parent) {
-		ui_widget_t* child;
-		list_node_t* node;
-
-		/* Update the index of the siblings behind it */
-		node = w->node.next;
-		while (node) {
-			child = node->data;
-			child->index -= 1;
-			node = node->next;
-		}
-		if (w->computed_style.position != SV_ABSOLUTE) {
-			ui_widget_add_task(w->parent, UI_TASK_REFLOW);
-		}
-		ui_widget_mark_dirty_rect(w->parent, &w->box.canvas,
-				      SV_CONTENT_BOX);
-		ui_trash_add(w);
-	}
 }
 
 void ui_widget_add_state(ui_widget_t* w, ui_widget_state_t state)
@@ -183,21 +121,22 @@ void ui_widget_set_title(ui_widget_t* w, const wchar_t* title)
 	ui_widget_add_task(w, UI_TASK_TITLE);
 }
 
-void ui_widget_set_text(ui_widget_t* w, const char *text)
+void ui_widget_set_text(ui_widget_t* w, const char* text)
 {
 	if (w->proto && w->proto->settext) {
 		w->proto->settext(w, text);
 	}
 }
 
-void ui_widget_bind_property(ui_widget_t* w, const char *name, LCUI_Object value)
+void ui_widget_bind_property(ui_widget_t* w, const char* name,
+			     LCUI_Object value)
 {
 	if (w->proto && w->proto->bindprop) {
 		w->proto->bindprop(w, name, value);
 	}
 }
 
-ui_widget_extra_data_t *ui_create_extra_data(ui_widget_t *widget)
+ui_widget_extra_data_t* ui_create_extra_data(ui_widget_t* widget)
 {
 	widget->extra = malloc(sizeof(ui_widget_extra_data_t));
 	if (!widget->extra) {
@@ -214,37 +153,6 @@ ui_widget_extra_data_t *ui_create_extra_data(ui_widget_t *widget)
 	widget->extra->rules.on_update_progress = FALSE;
 	widget->extra->observer = NULL;
 	return widget->extra;
-}
-
-void ui_widget_empty(ui_widget_t* w)
-{
-	ui_widget_t* root = w;
-	ui_widget_t* child;
-	list_node_t *node;
-	ui_event_t ev;
-
-	while (root->parent) {
-		root = root->parent;
-	}
-	if (root != ui_root()) {
-		ui_widget_destroy_children(w);
-		return;
-	}
-	ui_event_init(&ev, "unlink");
-	for (list_each(node, &w->children)) {
-		child = node->data;
-		ui_widget_emit_event(child, ev, NULL);
-		if (child->parent == root) {
-			ui_widget_post_surface_event(child, UI_EVENT_UNLINK,
-						TRUE);
-		}
-		child->state = LCUI_WSTATE_DELETED;
-		child->parent = NULL;
-	}
-	list_destroy_without_node(&w->stacking_context, NULL);
-	list_concat(&ui_trash, &w->children);
-	ui_widget_mark_dirty_rect(w, NULL, SV_GRAPH_BOX);
-	ui_widget_refresh_style(w);
 }
 
 void ui_widget_get_offset(ui_widget_t* w, ui_widget_t* parent, float* offset_x,

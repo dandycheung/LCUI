@@ -161,7 +161,7 @@ void ui_widget_update_stacking_context(ui_widget_t* w)
 			} else if (s->z_index < ts->z_index) {
 				continue;
 			}
-			LinkedList_Link(list, target_node->prev,
+			list_link(list, target_node->prev,
 					&child->node_show);
 			break;
 		}
@@ -240,9 +240,9 @@ static ui_updater_profile_t* ui_widget_begin_update(ui_widget_t* w,
 	if (w->hash && w->update.states[UI_TASK_REFRESH_STYLE]) {
 		ui_widget_generate_self_hash(w);
 	}
-	if (!self_ctx->style_cache && w->rules &&
-	    w->rules->cache_children_style) {
-		data = (ui_updater_rules_data_t*)w->rules;
+	if (!self_ctx->style_cache && w->extra &&
+	    w->extra.rules->cache_children_style) {
+		data = (ui_updater_rules_data_t*)&w->extra.rules;
 		if (!data->style_cache) {
 			data->style_cache =
 			    dict_create(&ui_updater.style_cache_dict, NULL);
@@ -521,6 +521,7 @@ size_t ui_update(void)
 	root->state = LCUI_WSTATE_NORMAL;
 	ui_updater.metrics = *metrics;
 	ui_updater.refresh_all = FALSE;
+	ui_process_mutation_observers();
 	ui_trash_clear();
 	return count;
 }

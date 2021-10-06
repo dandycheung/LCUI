@@ -3,9 +3,12 @@
 #include "../include/ui.h"
 #include "private.h"
 
+#define TYPE_CHILD_LIST UI_MUTATION_RECORD_TYPE_CHILD_LIST
+
 int ui_widget_append(ui_widget_t* parent, ui_widget_t* widget)
 {
 	ui_event_t ev = { 0 };
+	ui_mutation_record_t* record;
 
 	if (!parent || !widget) {
 		return -1;
@@ -24,17 +27,23 @@ int ui_widget_append(ui_widget_t* parent, ui_widget_t* widget)
 	ui_widget_refresh_style(widget);
 	ui_widget_update_children_style(widget, TRUE);
 	ui_widget_emit_event(widget, ev, NULL);
-	ui_widget_post_surface_event(widget, UI_EVENT_LINK, TRUE);
 	ui_widget_update_status(widget);
 	ui_widget_add_task(parent, UI_TASK_REFLOW);
+	if (ui_widget_has_observer(parent, TYPE_CHILD_LIST)) {
+		record = ui_mutation_record_create(widget, TYPE_CHILD_LIST);
+		list_append(&record->added_widgets, widget);
+		ui_widget_add_mutation_recrod(parent, record);
+		ui_mutation_record_destroy(record);
+	}
 	return 0;
 }
 
 int ui_widget_prepend(ui_widget_t* parent, ui_widget_t* widget)
 {
 	ui_widget_t* child;
+	ui_mutation_record_t* record;
 	ui_event_t ev = { 0 };
-	list_node_t *node;
+	list_node_t* node;
 
 	if (!parent || !widget) {
 		return -1;
@@ -49,7 +58,7 @@ int ui_widget_prepend(ui_widget_t* parent, ui_widget_t* widget)
 	widget->state = LCUI_WSTATE_CREATED;
 	widget->parent->update.for_children = TRUE;
 	node = &widget->node;
-	LinkedList_InsertNode(&parent->children, 0, node);
+	list_insert_node(&parent->children, 0, node);
 	/** 修改它后面的部件的 index 值 */
 	node = node->next;
 	while (node) {
@@ -64,31 +73,54 @@ int ui_widget_prepend(ui_widget_t* parent, ui_widget_t* widget)
 	ui_widget_add_task_for_children(widget, UI_TASK_REFRESH_STYLE);
 	ui_widget_update_status(widget);
 	ui_widget_add_task(parent, UI_TASK_REFLOW);
+	if (ui_widget_has_observer(parent, TYPE_CHILD_LIST)) {
+		record = ui_mutation_record_create(widget, TYPE_CHILD_LIST);
+		list_append(&record->added_widgets, widget);
+		ui_widget_add_mutation_recrod(parent, record);
+		ui_mutation_record_destroy(record);
+	}
 	return 0;
 }
 
-int ui_widget_unwrap(ui_widget_t* widget)
+int ui_widget_unwrap(ui_widget_t* w)
 {
 	size_t len;
 	ui_widget_t* child;
 	ui_event_t ev = { 0 };
-	list_t *children;
+	ui_mutation_record_t* record;
+	list_t* children;
 	list_node_t *target, *node, *prev;
 
-	if (!widget->parent) {
+	if (!w->parent) {
 		return -1;
 	}
-	children = &widget->parent->children;
-	len = widget->children.length;
+	if (ui_widget_has_observer(w, TYPE_CHILD_LIST)) {
+		record = ui_mutation_record_create(w, TYPE_CHILD_LIST);
+		for (list_each(node, &w->children)) {
+			list_append(&record->removed_widgets, node->data);
+		}
+		ui_widget_add_mutation_recrod(w, record);
+		ui_mutation_record_destroy(record);
+	}
+	if (ui_widget_has_observer(w->parent, TYPE_CHILD_LIST)) {
+		record = ui_mutation_record_create(w->parent, TYPE_CHILD_LIST);
+		for (list_each(node, &w->children)) {
+			list_append(&record->added_widgets, node->data);
+		}
+		ui_widget_add_mutation_recrod(w->parent, record);
+		ui_mutation_record_destroy(record);
+	}
+	children = &w->parent->children;
+	len = w->children.length;
 	if (len > 0) {
-		node = list_get_node(&widget->children, 0);
+		node = list_get_node(&w->children, 0);
 		ui_widget_remove_status(node->data, "first-child");
-		node = LinkedList_GetNodeAtTail(&widget->children, 0);
+		node = list_get_last_node(&w->children);
 		ui_widget_remove_status(node->data, "last-child");
 	}
-	node = &widget->node;
+	node = &w->node;
 	target = node->prev;
-	node = widget->children.tail.prev;
+	node = w->children.tail.prev;
 	ev.cancel_bubble = TRUE;
 	while (len > 0) {
 		assert(node != NULL);
@@ -97,24 +129,24 @@ int ui_widget_unwrap(ui_widget_t* widget)
 		child = node->data;
 		ev.type = UI_EVENT_UNLINK;
 		ui_widget_emit_event(child, ev, NULL);
-		list_unlink(&widget->children, node);
-		LinkedList_Link(children, target, node);
-		child->parent = widget->parent;
+		list_unlink(&w->children, node);
+		list_link(children, target, node);
+		child->parent = w->parent;
 		ev.type = UI_EVENT_LINK;
 		ui_widget_emit_event(child, ev, NULL);
 		ui_widget_add_task_for_children(child, UI_TASK_REFRESH_STYLE);
 		node = prev;
 		--len;
 	}
-	widget->parent->update.for_children;
-	if (widget->index == 0) {
+	w->parent->update.for_children;
+	if (w->index == 0) {
 		ui_widget_add_status(target->next->data, "first-child");
 	}
-	if (widget->index == children->length - 1) {
-		node = LinkedList_GetNodeAtTail(children, 0);
+	if (w->index == children->length - 1) {
+		node = list_get_last_node(children);
 		ui_widget_add_status(node->data, "last-child");
 	}
-	ui_widget_remove(widget);
+	ui_widget_remove(w);
 	return 0;
 }
 
@@ -122,7 +154,8 @@ int ui_widget_unlink(ui_widget_t* w)
 {
 	ui_widget_t* child;
 	ui_event_t ev = { 0 };
-	list_node_t *node;
+	ui_mutation_record_t* record;
+	list_node_t* node;
 
 	if (!w->parent) {
 		return -1;
@@ -157,13 +190,73 @@ int ui_widget_unlink(ui_widget_t* w)
 	list_unlink(&w->parent->stacking_context, &w->node_show);
 	ui_widget_post_surface_event(w, UI_EVENT_UNLINK, TRUE);
 	ui_widget_add_task(w->parent, UI_TASK_REFLOW);
+	if (ui_widget_has_observer(w->parent, TYPE_CHILD_LIST)) {
+		record = ui_mutation_record_create(w->parent, TYPE_CHILD_LIST);
+		list_append(&record->removed_widgets, w->parent);
+		ui_widget_add_mutation_recrod(w->parent, record);
+		ui_mutation_record_destroy(record);
+	}
 	w->parent = NULL;
 	return 0;
 }
 
+void ui_widget_empty(ui_widget_t* w)
+{
+	ui_widget_t* root = w;
+	ui_widget_t* child;
+	list_node_t* node;
+	ui_event_t ev = { 0 };
+	ui_mutation_record_t *record;
+
+	ui_event_init(&ev, "unlink");
+	if (ui_widget_has_observer(w, TYPE_CHILD_LIST)) {
+		record = ui_mutation_record_create(w->parent, TYPE_CHILD_LIST);
+		for (list_each(node, &w->children)) {
+			list_append(&record->removed_widgets, node->data);
+		}
+		ui_widget_add_mutation_recrod(w, record);
+		ui_mutation_record_destroy(record);
+	}
+	while (node = list_get_first_node(&w->children)) {
+		child = node->data;
+		list_unlink(&w->children, node);
+		ui_widget_emit_event(child, ev, NULL);
+		ui_trash_add(child);
+	}
+	list_destroy_without_node(&w->stacking_context, NULL);
+	ui_widget_mark_dirty_rect(w, NULL, SV_GRAPH_BOX);
+	ui_widget_refresh_style(w);
+}
+
+void ui_widget_remove(ui_widget_t* w)
+{
+	ui_widget_t* child;
+	list_node_t* node;
+	ui_mutation_record_t* record;
+
+	assert(w->state != LCUI_WSTATE_DELETED);
+	if (!w->parent) {
+		ui_trash_add(w);
+		return;
+	}
+	/* Update the index of the siblings behind it */
+	node = w->node.next;
+	while (node) {
+		child = node->data;
+		child->index -= 1;
+		node = node->next;
+	}
+	if (w->computed_style.position != SV_ABSOLUTE) {
+		ui_widget_add_task(w->parent, UI_TASK_REFLOW);
+	}
+	ui_widget_mark_dirty_rect(w->parent, &w->box.canvas, SV_CONTENT_BOX);
+	ui_widget_unlink(w);
+	ui_trash_add(w);
+}
+
 ui_widget_t* ui_widget_prev(ui_widget_t* w)
 {
-	list_node_t *node = &w->node;
+	list_node_t* node = &w->node;
 	if (node->prev && node != w->parent->children.head.next) {
 		return node->prev->data;
 	}
@@ -172,7 +265,7 @@ ui_widget_t* ui_widget_prev(ui_widget_t* w)
 
 ui_widget_t* ui_widget_next(ui_widget_t* w)
 {
-	list_node_t *node = &w->node;
+	list_node_t* node = &w->node;
 	if (node->next) {
 		return node->next->data;
 	}
@@ -181,15 +274,15 @@ ui_widget_t* ui_widget_next(ui_widget_t* w)
 
 ui_widget_t* ui_widget_get_child(ui_widget_t* w, size_t index)
 {
-	list_node_t *node = list_get_node(&w->children, index);
+	list_node_t* node = list_get_node(&w->children, index);
 	if (node) {
 		return node->data;
 	}
 	return NULL;
 }
 
-size_t ui_widget_each(ui_widget_t* w, void (*callback)(ui_widget_t*, void *),
-		   void *arg)
+size_t ui_widget_each(ui_widget_t* w, void (*callback)(ui_widget_t*, void*),
+		      void* arg)
 {
 	size_t count = 0;
 
@@ -213,8 +306,8 @@ ui_widget_t* ui_widget_at(ui_widget_t* widget, int ix, int iy)
 {
 	float x, y;
 	LCUI_BOOL is_hit;
-	list_node_t *node;
-	ui_widget_t* target = widget, *c = NULL;
+	list_node_t* node;
+	ui_widget_t *target = widget, *c = NULL;
 
 	if (!widget) {
 		return NULL;
@@ -240,11 +333,11 @@ ui_widget_t* ui_widget_at(ui_widget_t* widget, int ix, int iy)
 	return target == widget ? NULL : target;
 }
 
-static void _ui_widget_print_tree(ui_widget_t* w, int depth, const char *prefix)
+static void _ui_widget_print_tree(ui_widget_t* w, int depth, const char* prefix)
 {
 	size_t len;
 	ui_widget_t* child;
-	list_node_t *node;
+	list_node_t* node;
 	LCUI_SelectorNode snode;
 	char str[16], child_prefix[512];
 
