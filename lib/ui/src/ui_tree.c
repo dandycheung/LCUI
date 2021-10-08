@@ -25,7 +25,7 @@ int ui_widget_append(ui_widget_t* parent, ui_widget_t* widget)
 	ev.cancel_bubble = TRUE;
 	ev.type = UI_EVENT_LINK;
 	ui_widget_refresh_style(widget);
-	ui_widget_update_children_style(widget, TRUE);
+	ui_widget_refresh_children_style(widget);
 	ui_widget_emit_event(widget, ev, NULL);
 	ui_widget_update_status(widget);
 	ui_widget_add_task(parent, UI_TASK_REFLOW);
@@ -232,7 +232,6 @@ void ui_widget_remove(ui_widget_t* w)
 {
 	ui_widget_t* child;
 	list_node_t* node;
-	ui_mutation_record_t* record;
 
 	assert(w->state != LCUI_WSTATE_DELETED);
 	if (!w->parent) {
@@ -287,12 +286,12 @@ size_t ui_widget_each(ui_widget_t* w, void (*callback)(ui_widget_t*, void*),
 	size_t count = 0;
 
 	ui_widget_t* next;
-	ui_widget_t* child = LinkedList_Get(&w->children, 0);
+	ui_widget_t* child = list_get(&w->children, 0);
 
 	while (child && child != w) {
 		callback(child, arg);
 		++count;
-		next = LinkedList_Get(&child->children, 0);
+		next = list_get(&child->children, 0);
 		while (!next && child != w) {
 			next = ui_widget_next(child);
 			child = child->parent;
@@ -321,7 +320,7 @@ ui_widget_t* ui_widget_at(ui_widget_t* widget, int ix, int iy)
 			if (!c->computed_style.visible) {
 				continue;
 			}
-			if (LCUIRect_HasPoint(&c->box.border, x, y)) {
+			if (LCUIRectF_HasPoint(&c->box.border, x, y)) {
 				target = c;
 				x -= c->box.padding.x;
 				y -= c->box.padding.y;
@@ -359,7 +358,7 @@ static void _ui_widget_print_tree(ui_widget_t* w, int depth, const char* prefix)
 			strcat(str, "┬");
 		}
 		snode = ui_widget_create_selector_node(child);
-		Logger_Error(
+		logger_error(
 		    "%s%s %s, xy:(%g,%g), size:(%g,%g), "
 		    "visible: %s, display: %d, padding: (%g,%g,%g,%g), margin: "
 		    "(%g,%g,%g,%g)\n",
@@ -380,7 +379,7 @@ void ui_widget_print_tree(ui_widget_t* w)
 	LCUI_SelectorNode node;
 	w = w ? w : ui_root();
 	node = ui_widget_create_selector_node(w);
-	Logger_Error("%s, xy:(%g,%g), size:(%g,%g), visible: %s\n",
+	logger_error("%s, xy:(%g,%g), size:(%g,%g), visible: %s\n",
 		     node->fullname, w->x, w->y, w->width, w->height,
 		     w->computed_style.visible ? "true" : "false");
 	SelectorNode_Delete(node);

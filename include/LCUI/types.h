@@ -325,7 +325,7 @@ typedef struct LCUI_StyleRec_ {
 	};
 } LCUI_StyleRec, *LCUI_Style;
 
-typedef struct LCUI_BackgroundPosition {
+typedef struct pd_background_position_t {
 	LCUI_BOOL using_value;
 	union {
 		struct {
@@ -333,9 +333,9 @@ typedef struct LCUI_BackgroundPosition {
 		};
 		int value;
 	};
-} LCUI_BackgroundPosition;
+} pd_background_position_t;
 
-typedef struct LCUI_BackgroundSize {
+typedef struct pd_background_size_t {
 	LCUI_BOOL using_value;
 	union {
 		struct {
@@ -343,17 +343,17 @@ typedef struct LCUI_BackgroundSize {
 		};
 		int value;
 	};
-} LCUI_BackgroundSize;
+} pd_background_size_t;
 
-typedef struct LCUI_BackgroundStyle {
+typedef struct pd_background_style_t {
 	pd_canvas_t *image; /**< 背景图 */
 	pd_color_t color; /**< 背景色 */
 	struct {
 		LCUI_BOOL x, y;
 	} repeat;                         /**< 背景图是否重复 */
-	LCUI_BackgroundPosition position; /**< 定位方式 */
-	LCUI_BackgroundSize size;         /**< 尺寸 */
-} LCUI_BackgroundStyle;
+	pd_background_position_t position; /**< 定位方式 */
+	pd_background_size_t size;         /**< 尺寸 */
+} pd_background_style_t;
 
 typedef struct pd_background_t {
 	pd_canvas_t *image; /**< 背景图 */

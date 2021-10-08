@@ -2,13 +2,6 @@
 #include "../include/ui.h"
 #include "private.h"
 
-typedef struct ui_updater_rules_data_t {
-	ui_widget_rules_t rules;
-	dict_t* style_cache;
-	size_t default_max_update_count;
-	size_t progress;
-} ui_updater_rules_data_t;
-
 typedef struct ui_updater_profile_t ui_updater_profile_t;
 struct ui_updater_profile_t {
 	unsigned style_hash;
@@ -29,9 +22,9 @@ static struct ui_updater_t {
 static size_t ui_widget_update_with_context(ui_widget_t* w,
 					    ui_updater_profile_t* ctx);
 
-static unsigned int ui_style_dict_hash(const void* key)
+static uint64_t ui_style_dict_hash(const void* key)
 {
-	return Dict_IdentityHashFunction(*(unsigned int*)key);
+	return (*(unsigned int *)key);
 }
 
 static int ui_style_dict_key_compare(void* privdata, const void* key1,
@@ -107,29 +100,20 @@ void ui_widget_add_task(ui_widget_t* widget, int task)
 	}
 }
 
-int ui_widget_set_rules(ui_widget_t* w, const ui_widget_rules_t* rules)
+void ui_widget_set_rules(ui_widget_t *w, const ui_widget_rules_t* rules)
 {
-	ui_updater_rules_data_t* data;
-
-	data = (ui_updater_rules_data_t*)w->rules;
-	if (data) {
-		dict_destroy(data->style_cache);
-		free(data);
-		w->rules = NULL;
+	ui_widget_use_extra_data(w);
+	if (w->extra->style_cache) {
+		dict_destroy(w->extra->style_cache);
 	}
-	if (!rules) {
-		return 0;
+	if (rules) {
+		w->extra->rules = *rules;
+	} else {
+		memset(&w->extra->rules, 0, sizeof(ui_widget_rules_t));
 	}
-	data = malloc(sizeof(ui_updater_rules_data_t));
-	if (!data) {
-		return -ENOMEM;
-	}
-	data->rules = *rules;
-	data->progress = 0;
-	data->style_cache = NULL;
-	data->default_max_update_count = 2048;
-	w->rules = (ui_widget_rules_t*)data;
-	return 0;
+	w->extra->style_cache = NULL;
+	w->extra->update_progress = 0;
+	w->extra->default_max_update_count = 2048;
 }
 
 void ui_widget_update_stacking_context(ui_widget_t* w)
@@ -178,12 +162,12 @@ void ui_init_updater(void)
 {
 	dict_type_t* dt = &ui_updater.style_cache_dict;
 
-	dt->valDup = NULL;
-	dt->keyDup = ui_style_dict_key_dup;
-	dt->keyCompare = ui_style_dict_key_compare;
-	dt->hashFunction = ui_style_dict_hash;
-	dt->keyDestructor = ui_style_dict_key_free;
-	dt->valDestructor = ui_style_dict_val_free;
+	dt->val_dup = NULL;
+	dt->key_dup = ui_style_dict_key_dup;
+	dt->key_compare = ui_style_dict_key_compare;
+	dt->hash_function = ui_style_dict_hash;
+	dt->key_destructor = ui_style_dict_key_free;
+	dt->val_destructor = ui_style_dict_val_free;
 	set_task_handler(VISIBLE, ui_widget_compute_visibility_style);
 	set_task_handler(POSITION, ui_widget_compute_position_style);
 	set_task_handler(RESIZE, ui_widget_compute_size_style);
@@ -204,17 +188,12 @@ void ui_init_updater(void)
 	ui_updater.refresh_all = TRUE;
 }
 
-void ui_destroy_updater(void)
-{
-}
-
 static ui_updater_profile_t* ui_widget_begin_update(ui_widget_t* w,
 						    ui_updater_profile_t* ctx)
 {
 	unsigned hash;
 	LCUI_Selector selector;
 	LCUI_StyleSheet style;
-	ui_updater_rules_data_t* data;
 	LCUI_CachedStyleSheet matched_style;
 	ui_updater_profile_t* self_ctx;
 	ui_updater_profile_t* parent_ctx;
@@ -241,15 +220,14 @@ static ui_updater_profile_t* ui_widget_begin_update(ui_widget_t* w,
 		ui_widget_generate_self_hash(w);
 	}
 	if (!self_ctx->style_cache && w->extra &&
-	    w->extra.rules->cache_children_style) {
-		data = (ui_updater_rules_data_t*)&w->extra.rules;
-		if (!data->style_cache) {
-			data->style_cache =
+	    w->extra->rules.cache_children_style) {
+		if (!w->extra->style_cache) {
+			w->extra->style_cache =
 			    dict_create(&ui_updater.style_cache_dict, NULL);
 		}
 		ui_widget_generate_self_hash(w);
 		self_ctx->style_hash = w->hash;
-		self_ctx->style_cache = data->style_cache;
+		self_ctx->style_cache = w->extra->style_cache;
 	}
 	matched_style = w->matched_style;
 	if (self_ctx->style_cache && w->hash) {
@@ -342,18 +320,18 @@ static size_t ui_widget_update_children(ui_widget_t* w,
 {
 	clock_t msec = 0;
 	ui_widget_t* child;
-	ui_updater_rules_data_t* data;
+	ui_widget_rules_t *rules;
 	list_node_t *node, *next;
 	size_t total = 0, update_count = 0, count;
 
 	if (!w->update.for_children) {
 		return 0;
 	}
-	data = (ui_updater_rules_data_t*)w->rules;
 	node = w->children.head.next;
-	if (data) {
+	rules = w->extra ? &w->extra->rules : NULL;
+	if (rules) {
 		msec = clock();
-		if (data->rules.only_on_visible) {
+		if (rules->only_on_visible) {
 			if (!ui_widget_in_viewport(w)) {
 				DEBUG_MSG("%s %s: is not visible\n", w->type,
 					  w->id);
@@ -361,7 +339,7 @@ static size_t ui_widget_update_children(ui_widget_t* w,
 			}
 		}
 		DEBUG_MSG("%s %s: is visible\n", w->type, w->id);
-		if (data->rules.first_update_visible_children) {
+		if (rules->first_update_visible_children) {
 			total += ui_widget_update_visible_children(w, ctx);
 			DEBUG_MSG("first update visible children "
 				  "count: %zu\n",
@@ -381,48 +359,45 @@ static size_t ui_widget_update_children(ui_widget_t* w,
 		}
 		total += count;
 		node = next;
-		if (!data) {
+		if (!rules || rules->max_update_children_count == 0) {
 			continue;
 		}
 		if (count > 0) {
-			data->progress = y_max(child->index, data->progress);
-			if (data->progress > w->stacking_context.length) {
-				data->progress = child->index;
+			w->extra->update_progress = y_max(child->index, w->extra->update_progress);
+			if (w->extra->update_progress > w->stacking_context.length) {
+				w->extra->update_progress = child->index;
 			}
 			update_count += 1;
 		}
-		if (data->rules.max_update_children_count < 0) {
-			continue;
-		}
-		if (data->rules.max_update_children_count > 0) {
+		if (rules->max_update_children_count > 0) {
 			if (update_count >=
-			    (size_t)data->rules.max_update_children_count) {
+			    (size_t)rules->max_update_children_count) {
 				w->update.for_children = TRUE;
 				break;
 			}
 		}
-		if (update_count < data->default_max_update_count) {
+		if (update_count < w->extra->default_max_update_count) {
 			continue;
 		}
 		w->update.for_children = TRUE;
 		msec = (clock() - msec);
 		if (msec < 1) {
-			data->default_max_update_count += 128;
+			w->extra->default_max_update_count += 128;
 			continue;
 		}
-		data->default_max_update_count = update_count * CLOCKS_PER_SEC /
+		w->extra->default_max_update_count = update_count * CLOCKS_PER_SEC /
 						 LCUI_MAX_FRAMES_PER_SEC / msec;
-		if (data->default_max_update_count < 1) {
-			data->default_max_update_count = 32;
+		if (w->extra->default_max_update_count < 1) {
+			w->extra->default_max_update_count = 32;
 		}
 		break;
 	}
-	if (data) {
+	if (rules) {
 		if (!w->update.for_children) {
-			data->progress = w->stacking_context.length;
+			w->extra->update_progress = w->stacking_context.length;
 		}
-		if (data->rules.on_update_progress) {
-			data->rules.on_update_progress(w, data->progress);
+		if (rules->on_update_progress) {
+			rules->on_update_progress(w, w->extra->update_progress );
 		}
 	}
 	return total;
@@ -503,6 +478,13 @@ size_t ui_widget_update(ui_widget_t* w)
 	return count;
 }
 
+void ui_refresh_style(void)
+{
+	ui_widget_t* root = ui_root();
+	ui_widget_refresh_style(root);
+	ui_widget_add_task_for_children(root, UI_TASK_REFRESH_STYLE);
+}
+
 size_t ui_update(void)
 {
 	size_t count;
@@ -559,11 +541,4 @@ void ui_update_with_profile(ui_profile_t* profile)
 	profile->destroy_time = clock();
 	profile->destroy_count = ui_trash_clear();
 	profile->destroy_time = clock() - profile->destroy_time;
-}
-
-void ui_refresh_style(void)
-{
-	ui_widget_t* root = ui_root();
-	ui_widget_refresh_style(root);
-	ui_widget_add_task_for_children(root, UI_TASK_REFRESH_STYLE);
 }

@@ -68,7 +68,7 @@ void ui_set_dpi(float dpi)
 void ui_set_scale(float scale)
 {
 	scale = y_max(0.5f, scale);
-	scale = y_min5.0f, scale);
+	scale = y_min(5.0f, scale);
 	ui_metrics.scale = scale;
 }
 

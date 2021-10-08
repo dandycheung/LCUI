@@ -1,10 +1,14 @@
-#include <app.h>
+#include <LCUI/app.h>
+#include <LCUI/util.h>
+
 #ifdef APP_PLATFORM_WIN_DESKTOP
 #pragma comment(lib, "User32")
 #pragma comment(lib, "Gdi32")
 #include <windows.h>
 #include "resource.h"
 #include "../config.h"
+#include <LCUI/graph.h>
+#include <LCUI/painter.h>
 
 #define MIN_WIDTH 320
 #define MIN_HEIGHT 240
@@ -56,26 +60,55 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID unused)
 	return TRUE;
 }
 
-void app_process_native_events(void)
+int app_process_native_event(void)
 {
 	MSG msg;
+	BOOL ret;
+	DWORD err;
+	wchar_t errmsg[256] = { 0 };
 	list_node_t *node;
 	app_native_event_listener_t *listener;
 
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		for (list_each(node, &win32_app.native_listeners)) {
-			listener = node->data;
-			if (listener->type == msg.message) {
-				listener->handler(&msg, listener->data);
-			}
+	ret = GetMessage(&msg, NULL, 0, 0);
+	if (ret == -1) {
+		err = GetLastError();
+		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_IGNORE_INSERTS |
+					FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, err, LANG_NEUTRAL, errmsg, 256,
+				NULL);
+		logger_error("[win32-app] error %d: %ls\n", err,
+				errmsg);
+		return -1;
+	}
+	TranslateMessage(&msg);
+	DispatchMessage(&msg);
+	for (list_each(node, &win32_app.native_listeners)) {
+		listener = node->data;
+		if (listener->type == msg.message) {
+			listener->handler(&msg, listener->data);
 		}
 	}
+	return ret;
 }
 
-int app_add_native_event_listener(int event_type, app_native_event_handler_t handler,
-				   void *data)
+int app_process_native_events(void)
+{
+	int ret;
+	MSG msg;
+
+	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		ret = app_process_native_event();
+		if (ret == -1) {
+			return ret;
+		}
+	}
+	return 0;
+}
+
+int app_add_native_event_listener(int event_type,
+				  app_native_event_handler_t handler,
+				  void *data)
 {
 	app_native_event_listener_t *listener;
 
@@ -90,7 +123,8 @@ int app_add_native_event_listener(int event_type, app_native_event_handler_t han
 	return 0;
 }
 
-int app_remove_native_event_listener(int event_type, app_native_event_handler_t handler)
+int app_remove_native_event_listener(int event_type,
+				     app_native_event_handler_t handler)
 {
 	list_node_t *node, *prev;
 	app_native_event_listener_t *listener;
@@ -98,7 +132,8 @@ int app_remove_native_event_listener(int event_type, app_native_event_handler_t 
 	for (list_each(node, &win32_app.native_listeners)) {
 		prev = node->prev;
 		listener = node->data;
-		if (listener->handler == handler && listener->type == event_type) {
+		if (listener->handler == handler &&
+		    listener->type == event_type) {
 			list_delete_node(&win32_app.native_listeners, node);
 			free(listener);
 			node = prev;
@@ -167,7 +202,7 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 		break;
 	}
 	case WM_GETMINMAXINFO: {
-		MINMAXINFO *mminfo = arg2;
+		MINMAXINFO *mminfo = (MINMAXINFO*)arg2;
 		app_minmaxinfo_event_t *info = &e.minmaxinfo;
 		int style = GetWindowLong(hwnd, GWL_STYLE);
 
@@ -212,8 +247,7 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 		return 0;
 	case WM_KEYDOWN:
 	case WM_KEYUP:
-		e.key.code = arg1;
-		e.key.code = arg1;
+		e.key.code = (int)arg1;
 		e.key.shift_key =
 		    (GetKeyState(VK_SHIFT) & 0x8000) ? TRUE : FALSE;
 		e.key.ctrl_key =
@@ -315,7 +349,8 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 	default:
 		return DefWindowProc(hwnd, msg, arg1, arg2);
 	}
-	app_process_event(&e);
+	app_post_event(&e);
+	return 0;
 }
 
 app_window_t *app_window_create(const wchar_t *title, int x, int y, int width,
@@ -359,7 +394,7 @@ app_window_t *app_window_create(const wchar_t *title, int x, int y, int width,
 #endif
 	wnd->hdc_client = GetDC(wnd->hwnd);
 	wnd->hdc_fb = CreateCompatibleDC(wnd->hdc_client);
-	LinkedList_AppendNode(&win32_app.windows, &wnd->node);
+	list_append_node(&win32_app.windows, &wnd->node);
 	return wnd;
 }
 
@@ -418,7 +453,7 @@ void app_window_set_framebuffer_size(app_window_t *wnd, int width, int height)
 	if (wnd->width == width && wnd->height == height) {
 		return;
 	}
-	Graph_Create(&wnd->fb, width, height);
+	pd_canvas_create(&wnd->fb, width, height);
 	wnd->fb_bmp = CreateCompatibleBitmap(wnd->hdc_client, width, height);
 	old_bmp = (HBITMAP)SelectObject(wnd->hdc_fb, wnd->fb_bmp);
 	if (old_bmp) {
@@ -532,7 +567,7 @@ void app_present(void)
 	list_node_t *node;
 
 	for (list_each(node, &win32_app.windows)) {
-		x11_app_window_present(node->data);
+		app_window_present(node->data);
 	}
 }
 

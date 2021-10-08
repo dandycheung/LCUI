@@ -153,9 +153,10 @@ static void UpdateSurfaceSize(void)
 	dpy_ev.surface = display.surface;
 	dpy_ev.resize.width = (int)display.renderer->m_frameSize.width;
 	dpy_ev.resize.height = (int)display.renderer->m_frameSize.height;
-	LCUIDisplay_SetSize(dpy_ev.resize.width, dpy_ev.resize.height);
+	ui_widget_resize(ui_root(), dpy_ev.resize.width, dpy_ev.resize.height);
 	EventTrigger_Trigger(display.trigger, LCUI_DEVENT_RESIZE, &dpy_ev);
-	LCUIDisplay_InvalidateArea(NULL);
+	//TODO:
+	//LCUIDisplay_InvalidateArea(NULL);
 }
 
 static int UWPDisplay_GetWidth(void)

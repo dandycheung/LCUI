@@ -23,7 +23,7 @@ static void win32ime_on_char(MSG *msg, void *arg)
 {
 	wchar_t text[2];
 
-	text[0] = msg->wParam;
+	text[0] = (wchar_t)msg->wParam;
 	text[1] = 0;
 	ime_commit(text, 2);
 }
@@ -63,7 +63,7 @@ int ime_add_win32(void)
 	handler.close = win32ime_close;
 	handler.open = win32ime_open;
 	handler.setcaret = win32ime_set_caret;
-	return app_ime_add("Win32 Input Method", &handler);
+	return ime_add("Win32 Input Method", &handler);
 }
 
 #endif

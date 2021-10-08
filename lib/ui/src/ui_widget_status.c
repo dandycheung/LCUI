@@ -6,7 +6,7 @@ static void ui_widget_refresh_children_by_status(ui_widget_t* w)
 {
 	list_node_t *node;
 
-	if (w->rules && w->rules->ignore_status_change) {
+	if (w->extra && w->extra->rules.ignore_status_change) {
 		return;
 	}
 	ui_widget_add_task(w, UI_TASK_REFRESH_STYLE);
@@ -21,7 +21,7 @@ static int ui_wdiget_handle_status_change(ui_widget_t* w, const char *name)
 	if (w->state < LCUI_WSTATE_READY || w->state == LCUI_WSTATE_DELETED) {
 		return 1;
 	}
-	if (w->rules && w->rules->ignore_status_change) {
+	if (w->extra && w->extra->rules.ignore_status_change) {
 		return 0;
 	}
 	if (ui_widget_get_children_style_changes(w, 1, name) > 0) {

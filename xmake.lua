@@ -5,7 +5,7 @@ add_includedirs("include", "include/LCUI", "lib/yutil/include")
 add_rpathdirs("@loader_path/lib", "@loader_path")
 add_defines("LCUI_EXPORTS", "UNICODE")
 includes("lib/**/xmake.lua")
-includes("test/xmake.lua")
+includes("test/lib/ctest/xmake.lua")
 set_warnings("all")
 set_rundir("$(projectdir)/test")
 
@@ -18,6 +18,32 @@ else
         add_syslinks("gcov")
     end
 end
+
+target("run-tests")
+    set_kind("binary")
+    add_files("test/run_tests.c", "test/cases/*.c")
+    add_includedirs("test/lib/ctest/include/")
+    add_deps("ctest", "lcui")
+    on_run(function (target)
+        import("core.base.option")
+        local argv = {}
+        local options = {{nil, "memcheck",  "k",  nil, "enable memory check."}}
+        local args = option.raw_parse(option.get("arguments") or {}, options)
+        os.cd("$(projectdir)/test")
+        if args.memcheck then
+            if is_plat("windows") then
+                table.insert(argv, target:targetfile())
+                os.execv("drmemory", argv)
+            else
+                table.insert(argv, "--leak-check=full")
+                table.insert(argv, "--error-exitcode=42")
+                table.insert(argv, target:targetfile())
+                os.execv("valgrind", argv)
+            end
+        else
+            os.execv(target:targetfile())
+        end
+    end)
 
 target("lcui")
     set_kind("shared")
@@ -37,6 +63,7 @@ target("lcui")
         "lcui-ui",
         "lcui-ui-widgets",
         "lcui-ui-anchor",
+        "lcui-ui-cursor",
         "lcui-ui-builder",
         "lcui-ui-server",
         "lcui-app",
@@ -55,8 +82,9 @@ target("lcui")
         os.cp("$(projectdir)/lib/ui/include/*.h", "$(projectdir)/include/LCUI")
         os.cp("$(projectdir)/lib/ui-widgets/include/*.h", "$(projectdir)/include/LCUI/ui")
         os.cp("$(projectdir)/lib/ui-anchor/include/*.h", "$(projectdir)/include/LCUI/ui")
+        os.cp("$(projectdir)/lib/ui-cursor/include/*.h", "$(projectdir)/include/LCUI/ui")
         os.cp("$(projectdir)/lib/ui-builder/include/*.h", "$(projectdir)/include/LCUI/ui")
-        os.cp("$(projectdir)/lib/ui-player/include/*.h", "$(projectdir)/include/LCUI/ui")
+        os.cp("$(projectdir)/lib/ui-server/include/*.h", "$(projectdir)/include/LCUI/ui")
         os.cp("$(projectdir)/lib/app/include/*.h", "$(projectdir)/include/LCUI/")
         os.cp("$(projectdir)/lib/text/include/*.h", "$(projectdir)/include/LCUI/")
         os.cp("$(projectdir)/lib/timer/include/*.h", "$(projectdir)/include/LCUI/")

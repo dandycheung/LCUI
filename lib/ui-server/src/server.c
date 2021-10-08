@@ -1,10 +1,10 @@
 // TODO: Reduce dependence on lcui header files
 
+#include <string.h>
 #include <LCUI.h>
 #include <LCUI/graph.h>
-#include <string.h>
-#include <app.h>
-#include <ui.h>
+#include <ui/cursor.h>
+#include <ui/server.h>
 
 #include "config.h"
 
@@ -71,7 +71,7 @@ static void ui_connection_destroy(ui_connection_t *conn)
 
 int ui_server_disconnect(ui_widget_t *widget, app_window_t *window)
 {
-	int count;
+	int count = 0;
 	ui_connection_t *conn;
 	list_node_t *node, *prev;
 
@@ -123,7 +123,6 @@ static void ui_server_on_window_resize(app_event_t *e, void *arg)
 
 static void ui_server_on_window_minmaxinfo(app_event_t *e, void *arg)
 {
-	pd_rect_t rect;
 	LCUI_BOOL resizable = FALSE;
 	float scale = ui_get_scale();
 	int width = app_window_get_width(e->window);
@@ -172,7 +171,6 @@ static void ui_server_on_destroy_widget(ui_widget_t *widget, ui_event_t *e,
 
 void ui_server_connect(ui_widget_t *widget, app_window_t *window)
 {
-	pd_rect_t rect;
 	ui_connection_t *conn;
 	ui_mutation_observer_init_t options = { 0 };
 
@@ -280,7 +278,8 @@ static size_t ui_server_render_flash_rect(ui_connection_t *conn,
 		return 0;
 	}
 	period = get_time_delta(flash_rect->paint_time);
-	count = Widget_Render(conn->widget, paint);
+	count = ui_widget_render(conn->widget, paint);
+	ui_cursor_paint(conn->window, paint);
 	if (period >= duration) {
 		flash_rect->paint_time = 0;
 		app_window_end_paint(conn->window, paint);
@@ -362,7 +361,7 @@ static size_t ui_server_render_rect(ui_connection_t *conn, pd_rect_t *rect)
 	DEBUG_MSG("[thread %d/%d] rect: (%d,%d,%d,%d)\n", omp_get_thread_num(),
 		  omp_get_num_threads(), paint->rect.x, paint->rect.y,
 		  paint->rect.width, paint->rect.height);
-	count = Widget_Render(conn->widget, paint);
+	count = ui_widget_render(conn->widget, paint);
 	if (ui_server.paint_flashing_enabled) {
 		ui_server_add_flash_rect(conn, &paint->rect);
 	}
@@ -515,7 +514,6 @@ static void ui_server_on_widget_mutation(ui_mutation_list_t *mutation_list,
 	list_t wnd_mutation_list;
 	window_mutation_record_t *wnd_mutation;
 	ui_mutation_record_t *mutation;
-	app_window_t *wnd;
 
 	list_create(&wnd_mutation_list);
 	for (list_each(node, mutation_list)) {
@@ -524,7 +522,7 @@ static void ui_server_on_widget_mutation(ui_mutation_list_t *mutation_list,
 		    !mutation->property_name) {
 			continue;
 		}
-		window_mutation_list_add(wnd, mutation);
+		window_mutation_list_add(&wnd_mutation_list, mutation);
 	}
 	for (list_each(node, &wnd_mutation_list)) {
 		wnd_mutation = node->data;
@@ -562,6 +560,15 @@ void ui_server_init(void)
 	app_on_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
 	app_on_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
 	app_on_event(APP_EVENT_PAINT, ui_server_on_window_paint, NULL);
+	switch (app_get_id()) {
+	case APP_ID_LINUX_X11:
+	case APP_ID_UWP:
+	case APP_ID_WIN32:
+		ui_cursor_hide();
+		break;
+	default:
+		break;
+	}
 }
 
 void ui_server_set_threads(int threads)
@@ -576,8 +583,7 @@ void ui_server_set_paint_flashing_enabled(LCUI_BOOL enabled)
 
 void ui_server_destroy(void)
 {
-	app_off_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo,
-		      NULL);
-	app_off_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
-	app_off_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
+	app_off_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo);
+	app_off_event(APP_EVENT_SIZE, ui_server_on_window_resize);
+	app_off_event(APP_EVENT_CLOSE, ui_server_on_window_close);
 }

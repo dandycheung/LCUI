@@ -213,7 +213,7 @@ static void fb_app_window_set_size(app_window_t *wnd, int width, int height)
 	wnd->actual_rect = wnd->rect;
 	LCUIRect_ValidateArea(&wnd->actual_rect, fbapp.screen_width,
 			      fbapp.screen_height);
-	Graph_Create(&wnd->canvas, wnd->width, wnd->height);
+	pd_canvas_create(&wnd->canvas, wnd->width, wnd->height);
 }
 
 static void fb_app_window_set_title(app_window_t *wnd, const wchar_t *title)

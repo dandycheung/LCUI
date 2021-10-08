@@ -1,5 +1,5 @@
 ﻿#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI/types.h>
 #include <LCUI/graph.h>
 
 void pd_graph_draw_horiz_line(pd_canvas_t *canvas, pd_color_t color, int size,

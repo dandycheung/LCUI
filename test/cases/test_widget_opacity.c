@@ -19,13 +19,12 @@ static struct {
 
 static void build(void)
 {
-	ui_widget_t* pack, root;
+	ui_widget_t *pack, *root;
 
 	pack = LCUIBuilder_LoadFile("test_widget_opacity.xml");
 	root = ui_root();
 	ui_widget_append(root, pack);
 	ui_widget_unwrap(pack);
-
 	self.parent = ui_get_widget("parent");
 	self.child = ui_get_widget("child");
 	self.text = ui_get_widget("current-opacity");
@@ -62,8 +61,8 @@ static void check_widget_opactiy(void)
 
 	ui_widget_set_opacity(self.parent, 0.8f);
 	ui_widget_resize(self.parent, 512, 256);
-	ui_widget_update_style(self.child, TRUE);
-	ui_widget_update_style(self.parent, TRUE);
+	ui_widget_refresh_style(self.child);
+	ui_widget_refresh_style(self.parent);
 	ui_widget_update(self.child);
 	ui_widget_update(self.parent);
 	ui_widget_update(self.parent);

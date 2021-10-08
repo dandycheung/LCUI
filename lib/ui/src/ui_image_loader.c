@@ -41,10 +41,10 @@ typedef struct ui_image_loader_t {
 
 static ui_image_loader_t ui_image_loader;
 
-static void ui_image_destroy(void *privdata, const void *data)
+static void ui_image_destroy(void *privdata, void *data)
 {
 	ui_image_t *image = data;
-	Graph_Free(&image->data);
+	pd_canvas_free(&image->data);
 	free(image->path);
 	image->refs_count = 0;
 	list_destroy_without_node(&image->listeners, free);
@@ -52,14 +52,15 @@ static void ui_image_destroy(void *privdata, const void *data)
 	free(image);
 }
 
-static void ui_image_loader_load(ui_image_t *image)
+static void ui_image_loader_load(void *arg1, void *arg2)
 {
 	list_node_t *node;
+	ui_image_t *image = arg1;
 	ui_image_event_listener_t *listener;
 	ui_image_event_t *e;
 
 	if (!image->loaded) {
-		if (LCUI_ReadImageFile(image->path, &image) != 0) {
+		if (LCUI_ReadImageFile(image->path, &image->data) != 0) {
 			return;
 		}
 		image->loaded = TRUE;
@@ -83,11 +84,11 @@ static void ui_image_loader_load(ui_image_t *image)
 
 static void ui_post_image_task(ui_image_t *image)
 {
-	LCUI_Task task = { 0 };
+	LCUI_TaskRec task = { 0 };
 
-	task->arg[0] = image;
-	task->func = ui_image_loader_load;
-	LCUIWorker_PostTask(ui_image_loader.worker, task);
+	task.arg[0] = image;
+	task.func = ui_image_loader_load;
+	LCUIWorker_PostTask(ui_image_loader.worker, &task);
 }
 
 ui_image_t *ui_load_image(const char *path)
@@ -179,7 +180,7 @@ void ui_process_image_events(void)
 
 void ui_init_image_loader(void)
 {
-	ui_image_loader.dict_type.valDestructor = ui_image_destroy;
+	ui_image_loader.dict_type.val_destructor = ui_image_destroy;
 	ui_image_loader.dict = dict_create(&ui_image_loader.dict_type, NULL);
 	ui_image_loader.worker = LCUIWorker_New();
 	LCUIWorker_RunAsync(ui_image_loader.worker);

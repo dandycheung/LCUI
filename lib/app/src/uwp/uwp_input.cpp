@@ -31,7 +31,6 @@
 #include "pch.h"
 #include "uwp_input.h"
 #include <LCUI/input.h>
-#include <LCUI/cursor.h>
 #include <LCUI/ime.h>
 
 using namespace LCUICore;

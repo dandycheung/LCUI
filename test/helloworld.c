@@ -1,5 +1,4 @@
-﻿#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+﻿#include <LCUI.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 #include <LCUI/gui/widget/textview.h>
@@ -17,15 +16,14 @@ static void OnBtnClick(ui_widget_t* self, ui_event_t* e, void *arg)
 
 int main(int argc, char **argv)
 {
-	ui_widget_t* root, pack, btn;
+	ui_widget_t *pack, *btn;
 
 	lcui_init();
-	root = ui_root();
 	pack = LCUIBuilder_LoadFile("helloworld.xml");
 	if (!pack) {
 		return -1;
 	}
-	ui_widget_append(root, pack);
+	ui_root_append(pack);
 	ui_widget_unwrap(pack);
 	btn = ui_get_widget("btn");
 	ui_widget_on(btn, "click", OnBtnClick, NULL, NULL);

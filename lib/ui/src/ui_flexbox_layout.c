@@ -347,7 +347,7 @@ static void update_flex_item_size(ui_widget_t* w, ui_layout_rule_t rule)
 	    rule == UI_LAYOUT_RULE_FIXED_HEIGHT) {
 		rule = UI_LAYOUT_RULE_FIXED;
 	}
-	ui_widget_update(w, rule);
+	ui_widget_reflow(w, rule);
 	ui_widget_end_layout_diff(w, &diff);
 	w->update.states[UI_TASK_REFLOW] = FALSE;
 }

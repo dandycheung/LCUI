@@ -10,7 +10,6 @@ static LCUI_Mutex ui_widget_id_dict_mutex;
 int ui_widget_destroy_id(ui_widget_t* w)
 {
 	int ret = 0;
-	LCUIMutex_Lock(&ui_widget_id_dict_mutex);
 	list_t *list;
 	list_node_t *node;
 
@@ -28,7 +27,7 @@ int ui_widget_destroy_id(ui_widget_t* w)
 			free(w->id);
 			w->id = NULL;
 			list_unlink(list, node);
-			LinkedListNode_Delete(node);
+			free(node);
 			LCUIMutex_Unlock(&ui_widget_id_dict_mutex);
 			return 0;
 		}
@@ -88,7 +87,7 @@ ui_widget_t* ui_get_widget(const char *id)
 	LCUIMutex_Lock(&ui_widget_id_dict_mutex);
 	list = dict_fetch_value(ui_widget_id_dict, id);
 	if (list) {
-		w = LinkedList_Get(list, 0);
+		w = list_get(list, 0);
 	}
 	LCUIMutex_Unlock(&ui_widget_id_dict_mutex);
 	return w;
@@ -106,8 +105,8 @@ void ui_init_widget_id(void)
 {
 	static dict_type_t type;
 	LCUIMutex_Init(&ui_widget_id_dict_mutex);
-	Dict_InitStringCopyKeyType(&type);
-	type.valDestructor = ui_widget_id_dict_val_destructor;
+	dict_init_string_copy_key_type(&type);
+	type.val_destructor = ui_widget_id_dict_val_destructor;
 	ui_widget_id_dict = dict_create(&type, NULL);
 }
 

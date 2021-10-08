@@ -151,7 +151,7 @@ static void OnToggle(ui_widget_t* w, ui_event_t* e, void *arg)
 	} else {
 		ui_widget_add_class(sidebar, "sidebar-mini");
 	}
-	ui_widget_update_style(sidebar, TRUE);
+	ui_widget_refresh_style(sidebar);
 	e->cancel_bubble = TRUE;
 }
 

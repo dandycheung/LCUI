@@ -108,7 +108,7 @@ static void ui_mutation_observer_on_widget_destroy(ui_widget_t *w,
 		if (conn->widget == w) {
 			conn->widget->extra->observer = NULL;
 			conn->widget = NULL;
-			list_unlink(&observer->connections, &node);
+			list_unlink(&observer->connections, node);
 			free(conn);
 			node = prev;
 		}

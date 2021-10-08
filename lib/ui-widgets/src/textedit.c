@@ -32,9 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <LCUI.h>
+#include <LCUI/thread.h>
 #include <LCUI/graph.h>
 #include <LCUI/font.h>
-#include <LCUI/thread.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/css_parser.h>
 #include <LCUI/gui/css_fontstyle.h>

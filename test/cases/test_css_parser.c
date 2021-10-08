@@ -1,7 +1,6 @@
 ﻿#include <stdio.h>
-#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
-#include <LCUI/display.h>
+#include <LCUI.h>
+#include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 #include "ctest.h"
 

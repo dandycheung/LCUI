@@ -1,5 +1,4 @@
-#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI.h>
 #include <LCUI/draw/border.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>

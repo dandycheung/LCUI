@@ -27,7 +27,7 @@ static void ui_widget_init(ui_widget_t* w)
 	ui_widget_init_background(w);
 }
 
-static void ui_widget_destroy(ui_widget_t* w)
+void ui_widget_destroy(ui_widget_t* w)
 {
 	if (w->parent) {
 		ui_widget_add_task(w->parent, UI_TASK_REFLOW);

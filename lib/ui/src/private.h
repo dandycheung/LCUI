@@ -52,7 +52,7 @@ void ui_widget_paint_background(ui_widget_t* w, pd_paint_context_t *paint,
 // Border
 
 void ui_widget_compute_border_style(ui_widget_t* w);
-void ui_widget_compute_border(ui_widget_t* w, LCUI_Border* b);
+void ui_widget_compute_border(ui_widget_t* w, pd_border_t* b);
 void ui_widget_paint_border(ui_widget_t* w, pd_paint_context_t *paint,
 			    ui_widget_actual_style_t* style);
 void ui_widget_crop_content(ui_widget_t* w, pd_paint_context_t *paint,
@@ -100,9 +100,9 @@ typedef struct ui_widget_style_diff_t_ {
 	pd_rect_t2F margin;
 	pd_rect_t2F padding;
 	LCUI_StyleValue position;
-	LCUI_BorderStyle border;
-	LCUI_BoxShadowStyle shadow;
-	LCUI_BackgroundStyle background;
+	pd_border_style_t border;
+	pd_boxshadow_style_t shadow;
+	pd_background_style_t background;
 	ui_widget_box_model_t box;
 	ui_flexbox_layout_style_t flex;
 	LCUI_BOOL should_add_dirty_rect;
@@ -124,75 +124,10 @@ int ui_widget_end_layout_diff(ui_widget_t* w, ui_widget_layout_diff_t* diff);
 void ui_block_layout_reflow(ui_widget_t* w, ui_layout_rule_t rule);
 void ui_flexbox_layout_reflow(ui_widget_t* w, ui_layout_rule_t rule);
 
-// Util
+// Updater
 
-INLINE float padding_x(ui_widget_t* w)
-{
-	return w->padding.left + w->padding.right;
-}
 
-INLINE float padding_y(ui_widget_t* w)
-{
-	return w->padding.top + w->padding.bottom;
-}
-
-INLINE float border_x(ui_widget_t* w)
-{
-	return w->computed_style.border.left.width +
-	       w->computed_style.border.right.width;
-}
-
-INLINE float border_y(ui_widget_t* w)
-{
-	return w->computed_style.border.top.width +
-	       w->computed_style.border.bottom.width;
-}
-
-INLINE float margin_x(ui_widget_t* w)
-{
-	return w->margin.left + w->margin.right;
-}
-
-INLINE float margin_y(ui_widget_t* w)
-{
-	return w->margin.top + w->margin.bottom;
-}
-
-INLINE float to_border_box_width(ui_widget_t* w, float content_width)
-{
-	return content_width + padding_x(w) + border_x(w);
-}
-
-INLINE float to_border_box_height(ui_widget_t* w, float content_height)
-{
-	return content_height + padding_y(w) + border_y(w);
-}
-
-INLINE float ui_widget_get_limited_width(ui_widget_t* w, float width)
-{
-	if (w->computed_style.max_width > -1 &&
-	    width > w->computed_style.max_width) {
-		width = w->computed_style.max_width;
-	}
-	if (w->computed_style.min_width > -1 &&
-	    width < w->computed_style.min_width) {
-		width = w->computed_style.min_width;
-	}
-	return width;
-}
-
-INLINE float ui_widget_get_limited_height(ui_widget_t* w, float height)
-{
-	if (w->computed_style.max_height > -1 &&
-	    height > w->computed_style.max_height) {
-		height = w->computed_style.max_height;
-	}
-	if (w->computed_style.min_height > -1 &&
-	    height < w->computed_style.min_height) {
-		height = w->computed_style.min_height;
-	}
-	return height;
-}
+void ui_init_updater(void);
 
 // Events
 

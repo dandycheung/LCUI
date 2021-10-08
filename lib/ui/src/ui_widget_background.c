@@ -6,10 +6,10 @@
 
 void ui_widget_init_background(ui_widget_t *w)
 {
-	LCUI_BackgroundStyle *bg;
+	pd_background_style_t *bg;
 	bg = &w->computed_style.background;
 	bg->color = RGB(255, 255, 255);
-	pd_canvas_init(&bg->image);
+	pd_canvas_init(bg->image);
 	bg->size.using_value = TRUE;
 	bg->size.value = SV_AUTO;
 	bg->position.using_value = TRUE;
@@ -19,7 +19,7 @@ void ui_widget_init_background(ui_widget_t *w)
 void ui_widget_destroy_background(ui_widget_t *w)
 {
 	ui_widget_unset_style(w, key_background_image);
-	pd_canvas_init(&w->computed_style.background.image);
+	pd_canvas_init(w->computed_style.background.image);
 	if (ui_widget_check_style_type(w, key_background_image, string)) {
 		ui_image_remove_ref(
 		    (ui_image_t *)&w->computed_style.background.image);
@@ -36,7 +36,7 @@ void ui_widget_compute_background_style(ui_widget_t *widget)
 {
 	LCUI_Style s;
 	LCUI_StyleSheet ss = widget->style;
-	LCUI_BackgroundStyle *bg = &widget->computed_style.background;
+	pd_background_style_t *bg = &widget->computed_style.background;
 	int key = key_background_start;
 
 	for (; key <= key_background_end; ++key) {
@@ -51,12 +51,12 @@ void ui_widget_compute_background_style(ui_widget_t *widget)
 			break;
 		case key_background_image:
 			if (!s->is_valid) {
-				pd_canvas_init(&bg->image);
+				pd_canvas_init(bg->image);
 				break;
 			}
 			switch (s->type) {
 			case LCUI_STYPE_STRING:
-				bg->image = ui_load_image(s->string);
+				bg->image = (pd_canvas_t*)ui_load_image(s->string);
 				ui_image_on_event(
 				    (ui_image_t *)bg->image,
 				    ui_widget_on_background_image_load, widget);
@@ -122,7 +122,7 @@ void ui_widget_compute_background(ui_widget_t *w, pd_background_t *out)
 {
 	LCUI_StyleType type;
 	pd_rectf_t *box = &w->box.border;
-	LCUI_BackgroundStyle *bg = &w->computed_style.background;
+	pd_background_style_t *bg = &w->computed_style.background;
 	float scale, x = 0, y = 0, width, height;
 
 	/* 计算背景图应有的尺寸 */
@@ -267,7 +267,7 @@ void ui_widget_compute_background(ui_widget_t *w, pd_background_t *out)
 		out->position.y = ui_compute_actual(y, type);
 	}
 	out->color = bg->color;
-	out->image = &bg->image;
+	out->image = bg->image;
 	out->repeat.x = bg->repeat.x;
 	out->repeat.y = bg->repeat.y;
 }

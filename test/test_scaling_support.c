@@ -1,8 +1,6 @@
 #include <stdlib.h>
-#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI.h>
 #include <LCUI/timer.h>
-#include <LCUI/display.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 
@@ -23,7 +21,6 @@ static void OnButtonClick(ui_widget_t* w, ui_event_t* e, void *arg)
 		break;
 	}
 	ui_refresh_style();
-	LCUIDisplay_InvalidateArea(NULL);
 }
 
 static void SetButton(const char *id, int type, int level)
@@ -59,7 +56,7 @@ static void InitButtons(void)
 
 int main(int argc, char **argv)
 {
-	ui_widget_t* root, pack;
+	ui_widget_t *root, *pack;
 
 	lcui_init();
 	root = ui_root();

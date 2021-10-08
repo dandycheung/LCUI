@@ -32,7 +32,6 @@
 #include "pch.h"
 #include "uwp_app.h"
 #include <LCUI/platform.h>
-#include <LCUI/cursor.h>
 #include <LCUI/ime.h>
 #include LCUI_APP_H
 
@@ -226,8 +225,8 @@ void App::Load(Platform::String^ entryPoint)
 	LCUI_InitApp(m_appDriver);
 	LCUI_InitDisplay(m_displayDriver);
 	app_init_ime();
-	LCUI_InitCursor();
-	LCUICursor_Hide();
+	ui_cursor_init();
+	ui_cursor_hide();
 	m_inputDriver->RegisterIME();
 	m_inputDriver->SelectIME();
 	UWPApp.app->Load(entryPoint);

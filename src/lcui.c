@@ -10,7 +10,6 @@
 #include <LCUI/thread.h>
 #include <LCUI/worker.h>
 #include <LCUI/timer.h>
-#include <LCUI/cursor.h>
 #include <LCUI/font.h>
 
 #define LCUI_WORKER_NUM 4
@@ -84,16 +83,15 @@ void lcui_init_app(void)
 	lcui_app.timer.target_elapsed_time = 0;
 }
 
-void lcui_set_frame_rate_cap(float rate_cap)
+void lcui_set_frame_rate_cap(unsigned rate_cap)
 {
 	lcui_app.timer.target_elapsed_time =
-	    rate_cap > 0 ? 1000.f / rate_cap : 0;
+	    rate_cap > 0 ? 1000 / rate_cap : 0;
 }
 
 static void lcui_destroy_app(void)
 {
 	int i;
-	list_node_t *node;
 
 	for (i = 0; i < LCUI_WORKER_NUM; ++i) {
 		LCUIWorker_Destroy(lcui_app.workers[i]);
@@ -137,156 +135,58 @@ static void lcui_print_info(void)
 
 static void lcui_app_on_tick(step_timer_t *timer, void *data)
 {
-	LCUIDisplay_Update();
-	LCUIDisplay_Render();
-	LCUIDisplay_Present();
+	lcui_render_ui();
+	app_present();
 }
 
-int lcui_poll_event(app_event_t *e)
+int lcui_get_event(app_event_t *e)
 {
-	lcui_process_timers();
-	app_process_native_events();
-	while (LCUIWorker_RunTask(lcui_app.main_worker))
-		;
-	return app_poll_event(e);
-}
-
-static void lcui_dispatch_ui_mouse_event(ui_event_type_t type,
-					 app_event_t *app_evt)
-{
-	ui_event_t e = { 0 };
-	float scale = ui_get_scale();
-
-	e.type = type;
-	e.mouse.y = y_iround(app_evt->mouse.y / scale);
-	e.mouse.x = y_iround(app_evt->mouse.x / scale);
-	ui_dispatch_event(&e);
-}
-
-static void lcui_dispatch_ui_keyboard_event(ui_event_type_t type,
-					    app_event_t *app_evt)
-{
-	ui_event_t e = { 0 };
-
-	e.type = type;
-	e.key.code = app_evt->key.code;
-	e.key.is_composing = app_evt->key.is_composing;
-	e.key.alt_key = app_evt->key.alt_key;
-	e.key.shift_key = app_evt->key.shift_key;
-	e.key.ctrl_key = app_evt->key.ctrl_key;
-	e.key.meta_key = app_evt->key.meta_key;
-	ui_dispatch_event(&e);
-}
-
-static void lcui_dispatch_ui_touch_event(app_touch_event_t *touch_ev)
-{
-	size_t i;
-	float scale;
-	ui_event_t e = { 0 };
-
-	scale = ui_get_scale();
-	e.type = UI_EVENT_TOUCH;
-	e.touch.n_points = touch_ev->n_points;
-	e.touch.points = malloc(sizeof(ui_touch_point_t) * e.touch.n_points);
-	for (i = 0; i < e.touch.n_points; ++i) {
-		switch (touch_ev->points[i].state) {
-		case APP_EVENT_TOUCHDOWN:
-			e.touch.points[i].state = UI_EVENT_TOUCHDOWN;
-			break;
-		case APP_EVENT_TOUCHUP:
-			e.touch.points[i].state = UI_EVENT_TOUCHUP;
-			break;
-		case APP_EVENT_TOUCHMOVE:
-			e.touch.points[i].state = UI_EVENT_TOUCHMOVE;
-			break;
-		default:
-			break;
+	do {
+		lcui_process_timers();
+		while (LCUIWorker_RunTask(lcui_app.main_worker));
+		if (app_poll_event(e)) {
+			if (e->type == APP_EVENT_QUIT) {
+				return 0;
+			}
+			return 1;
 		}
-		e.touch.points[i].x = y_iround(touch_ev->points[i].x / scale);
-		e.touch.points[i].y = y_iround(touch_ev->points[i].y / scale);
-	}
-	ui_dispatch_event(&e);
-	ui_event_destroy(&e);
-}
-
-static void lcui_dispatch_ui_textinput_event(app_event_t *app_evt)
-{
-	ui_event_t e = { 0 };
-
-	e.type = UI_EVENT_TEXTINPUT;
-	e.text.length = app_evt->text.length;
-	e.text.text = wcsdup2(app_evt->text.text);
-	ui_dispatch_event(&e);
-	ui_event_destroy(&e);
-}
-
-static void lcui_dispatch_ui_wheel_event(app_wheel_event_t *wheel)
-{
-	ui_event_t e = { 0 };
-
-	// TODO:
-	e.type = UI_EVENT_WHEEL;
-	e.wheel.delta_mode = UI_WHEEL_DELTA_PIXEL;
-	e.wheel.delta_y = wheel->delta_y;
-	ui_dispatch_event(&e);
-}
-
-static void lcui_dispatch_ui_event(app_event_t *app_event)
-{
-	// keyboard
-	switch (app_event->type) {
-	case APP_EVENT_KEYDOWN:
-		lcui_dispatch_ui_keyboard_event(UI_EVENT_KEYDOWN, app_event);
-		return;
-	case APP_EVENT_KEYUP:
-		lcui_dispatch_ui_keyboard_event(UI_EVENT_KEYUP, app_event);
-		return;
-	case APP_EVENT_KEYPRESS:
-		lcui_dispatch_ui_keyboard_event(UI_EVENT_KEYPRESS, app_event);
-		return;
-	case APP_EVENT_MOUSEDOWN:
-		lcui_dispatch_ui_mouse_event(UI_EVENT_MOUSEDOWN, app_event);
-		return;
-	case APP_EVENT_MOUSEUP:
-		lcui_dispatch_ui_mouse_event(UI_EVENT_MOUSEUP, app_event);
-		return;
-	case APP_EVENT_MOUSEMOVE:
-		lcui_dispatch_ui_mouse_event(UI_EVENT_MOUSEMOVE, app_event);
-		return;
-	case APP_EVENT_TOUCH:
-		lcui_dispatch_ui_touch_event(&app_event->touch);
-		return;
-	case APP_EVENT_WHEEL:
-		lcui_dispatch_ui_wheel_event(&app_event->wheel);
-	case APP_EVENT_COMPOSITION:
-		lcui_dispatch_ui_textinput_event(app_event);
-	default:
-		break;
-	}
+	} while (app_process_native_event());
+	e->type = APP_EVENT_NONE;
+	return 0;
 }
 
 int lcui_process_event(app_event_t *e)
 {
 	app_process_event(e);
-	if (e->type = APP_EVENT_QUIT) {
+	if (e->type == APP_EVENT_QUIT || e->type == APP_EVENT_NONE) {
 		return -1;
 	}
 	lcui_dispatch_ui_event(e);
-	ui_process_events();
+	lcui_update_ui();
 	step_timer_tick(&lcui_app.timer, lcui_app_on_tick, NULL);
+	app_event_destroy(e);
 	return 0;
 }
 
-void lcui_init_ui_preset_widgets(void)
+int lcui_process_events(void)
 {
-	LCUIWidget_AddTextView();
-	LCUIWidget_AddCanvas();
-	LCUIWidget_AddAnchor();
-	LCUIWidget_AddButton();
-	LCUIWidget_AddSideBar();
-	LCUIWidget_AddTScrollBar();
-	LCUIWidget_AddTextCaret();
-	LCUIWidget_AddTextEdit();
+	int ret;
+	app_event_t e = { 0 };
+
+	lcui_process_timers();
+	while (LCUIWorker_RunTask(lcui_app.main_worker));
+	app_process_native_events();
+	while (app_poll_event(&e)) {
+		ret= lcui_process_event(&e);
+		if (ret == -1) {
+			break;
+		}
+		lcui_dispatch_ui_event(&e);
+		lcui_update_ui();
+		step_timer_tick(&lcui_app.timer, lcui_app_on_tick, NULL);
+		app_event_destroy(&e);
+	}
+	return ret;
 }
 
 void lcui_init_base(void)
@@ -299,9 +199,7 @@ void lcui_init_base(void)
 	lcui_print_info();
 	LCUI_InitFontLibrary();
 	lcui_init_timers();
-	LCUI_InitCursor();
-	LCUI_InitWidget();
-	lcui_init_ui_preset_widgets();
+	lcui_init_ui();
 	lcui_reset_settings();
 }
 
@@ -315,7 +213,7 @@ void lcui_init(void)
 int lcui_destroy(void)
 {
 	lcui_destroy_app();
-	LCUI_FreeWidget();
+	lcui_destroy_ui();
 	LCUI_FreeFontLibrary();
 	lcui_destroy_timers();
 	app_destroy();
@@ -340,14 +238,8 @@ int lcui_main(void)
 	LCUI_BOOL active = TRUE;
 	app_event_t e = { 0 };
 
-	while (active) {
-		while (lcui_poll_event(&e)) {
-			if (lcui_process_event(&e) != 0) {
-				active = FALSE;
-				break;
-			}
-			app_event_destroy(&e);
-		}
+	while (lcui_get_event(&e)) {
+		lcui_process_event(&e);
 	}
 	return lcui_destroy();
 }

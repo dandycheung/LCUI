@@ -1,4 +1,5 @@
-﻿#include <LCUI.h>
+﻿#include <math.h>
+#include <LCUI.h>
 #include <LCUI/thread.h>
 #include "../include/ui.h"
 #include "private.h"
@@ -9,7 +10,7 @@
 
 typedef struct ui_touch_capturer_t {
 	list_t points;
-	ui_widget_t* widget;
+	ui_widget_t *widget;
 	list_node_t node;
 } ui_touch_capturer_t;
 
@@ -25,7 +26,7 @@ typedef struct ui_event_pack_t {
 	list_node_t node;
 	void *data;
 	void(*destroy_data)(void *);
-	ui_widget_t* widget;
+	ui_widget_t *widget;
 	ui_event_t event;
 } ui_event_pack_t;
 
@@ -44,16 +45,16 @@ typedef struct ui_event_mapping_t {
 /** 鼠标点击记录 */
 typedef struct ui_widget_click_record_t {
 	int64_t time;       /**< 时间 */
-	int x, y;           /**< 坐标 */
+	float x, y;         /**< 坐标 */
 	int interval;       /**< 与上次点击时的时间间隔 */
-	ui_widget_t* widget; /**< 被点击的部件 */
+	ui_widget_t *widget; /**< 被点击的部件 */
 } ui_widget_click_record_t;
 
 /** 当前功能模块的相关数据 */
 static struct ui_events_t {
-	ui_widget_t* mouse_capturer;
+	ui_widget_t *mouse_capturer;
 	list_t touch_capturers;
-	ui_widget_t* targets[UI_WIDGET_STATUS_TOTAL];
+	ui_widget_t *targets[UI_WIDGET_STATUS_TOTAL];
 
 	/** list_t<ui_event_pack_t> */
 	list_t queue;
@@ -101,7 +102,7 @@ int ui_set_event_id(int event_id, const char* event_name)
 	mapping->name = strdup2(event_name);
 	mapping->id = event_id;
 	list_append(&ui_events.event_mappings, mapping);
-	RBTree_Insert(&ui_events.event_names, event_id, mapping);
+	rbtree_insert_by_key(&ui_events.event_names, event_id, mapping);
 	ret = dict_add(ui_events.event_ids, mapping->name, mapping);
 	LCUIMutex_Unlock(&ui_events.mutex);
 	return ret;
@@ -116,7 +117,7 @@ const char* ui_get_event_name(int event_id)
 {
 	ui_event_mapping_t* mapping;
 	LCUIMutex_Lock(&ui_events.mutex);
-	mapping = RBTree_GetData(&ui_events.event_names, event_id);
+	mapping = rbtree_get_data_by_key(&ui_events.event_names, event_id);
 	LCUIMutex_Unlock(&ui_events.mutex);
 	return mapping ? mapping->name : NULL;
 }
@@ -170,7 +171,7 @@ static int ui_event_copy(const ui_event_t* src, ui_event_t* dst)
 			break;
 		}
 		n = dst->touch.n_points;
-		size = sizeof(LCUI_TouchPointRec) * n;
+		size = sizeof(ui_touch_point_t) * n;
 		dst->touch.points = malloc(size);
 		if (!dst->touch.points) {
 			return -ENOMEM;
@@ -181,7 +182,7 @@ static int ui_event_copy(const ui_event_t* src, ui_event_t* dst)
 		if (!dst->text.text) {
 			break;
 		}
-		dst->text.text = NEW(wchar_t, dst->text.length + 1);
+		dst->text.text = malloc(sizeof(wchar_t) * (dst->text.length + 1));
 		if (!dst->text.text) {
 			return -ENOMEM;
 		}
@@ -231,7 +232,7 @@ INLINE ui_clear_touch_capturers(list_t* list)
 	list_destroy_without_node(list, ui_touch_capturer_destroy);
 }
 
-static int ui_add_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
+static int ui_add_touch_capturer(list_t* list, ui_widget_t *w, int point_id)
 {
 	int* data;
 	ui_touch_capturer_t* tc = NULL;
@@ -279,7 +280,7 @@ static int ui_add_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
 	return 0;
 }
 
-static int ui_remove_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
+static int ui_remove_touch_capturer(list_t* list, ui_widget_t *w, int point_id)
 {
 	ui_touch_capturer_t* tc = NULL;
 	list_node_t *node, *ptnode;
@@ -309,7 +310,7 @@ static int ui_remove_touch_capturer(list_t* list, ui_widget_t* w, int point_id)
 	return 0;
 }
 
-int ui_widget_add_event_listener(ui_widget_t* w, int event_id,
+int ui_widget_add_event_listener(ui_widget_t *w, int event_id,
 				 ui_event_handler_t handler, void* data,
 				 void (*destroy_data)(void*))
 {
@@ -323,11 +324,11 @@ int ui_widget_add_event_listener(ui_widget_t* w, int event_id,
 	listener->data = data;
 	listener->event_id = event_id;
 	listener->destroy_data = destroy_data;
-	list_append_node(&widget_use_extra_data(w)->listeners, &listener->node);
+	list_append_node(&ui_widget_use_extra_data(w)->listeners, &listener->node);
 	return 0;
 }
 
-int ui_widget_on(ui_widget_t* w, const char* event_name,
+int ui_widget_on(ui_widget_t *w, const char* event_name,
 		 ui_event_handler_t handler, void* data,
 		 void (*destroy_data)(void*))
 {
@@ -335,7 +336,7 @@ int ui_widget_on(ui_widget_t* w, const char* event_name,
 	return ui_widget_add_event_listener(w, id, handler, data, destroy_data);
 }
 
-int ui_widget_remove_event_listener(ui_widget_t* w, int event_id,
+int ui_widget_remove_event_listener(ui_widget_t *w, int event_id,
 				    ui_event_handler_t handler)
 {
 	int count = 0;
@@ -360,16 +361,16 @@ int ui_widget_remove_event_listener(ui_widget_t* w, int event_id,
 	return count;
 }
 
-int ui_widget_off(ui_widget_t* w, const char* event_name,
+int ui_widget_off(ui_widget_t *w, const char* event_name,
 		  ui_event_handler_t handler)
 {
 	int id = ui_use_widget_event_id(event_name);
 	return ui_widget_remove_event_listener(w, id, handler);
 }
 
-static ui_widget_t* ui_widget_get_next_at(ui_widget_t* widget, int x, int y)
+static ui_widget_t *ui_widget_get_next_at(ui_widget_t *widget, float x, float y)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 	list_node_t* node;
 
 	node = &widget->node;
@@ -382,7 +383,7 @@ static ui_widget_t* ui_widget_get_next_at(ui_widget_t* widget, int x, int y)
 		if (!w->computed_style.visible) {
 			continue;
 		}
-		if (!LCUIRect_HasPoint(&w->box.border, x, y)) {
+		if (!LCUIRectF_HasPoint(&w->box.border, x, y)) {
 			continue;
 		}
 		return w;
@@ -390,7 +391,7 @@ static ui_widget_t* ui_widget_get_next_at(ui_widget_t* widget, int x, int y)
 	return NULL;
 }
 
-static int ui_widget_call_listeners(ui_widget_t* w, ui_event_t e, void* arg)
+static int ui_widget_call_listeners(ui_widget_t *w, ui_event_t e, void* arg)
 {
 	int count = 0;
 	list_node_t* node;
@@ -413,7 +414,7 @@ static int ui_widget_call_listeners(ui_widget_t* w, ui_event_t e, void* arg)
 	return count;
 }
 
-int ui_widget_post_event(ui_widget_t* w, const ui_event_t* e, void* data,
+int ui_widget_post_event(ui_widget_t *w, const ui_event_t* e, void* data,
 			 void (*destroy_data)(void*))
 {
 	ui_event_pack_t* pack;
@@ -436,8 +437,14 @@ int ui_widget_post_event(ui_widget_t* w, const ui_event_t* e, void* data,
 	return 0;
 }
 
-int ui_widget_emit_event(ui_widget_t* w, ui_event_t e, void* arg)
+int ui_widget_emit_event(ui_widget_t *w, ui_event_t e, void* arg)
 {
+	float x, y;
+	float pointer_x, pointer_y;
+
+	ui_widget_t *sibling;
+	LCUI_BOOL is_pointer_event = FALSE;
+
 	if (!e.target) {
 		e.target = w;
 	}
@@ -448,6 +455,9 @@ int ui_widget_emit_event(ui_widget_t* w, ui_event_t e, void* arg)
 	case UI_EVENT_MOUSEMOVE:
 	case UI_EVENT_MOUSEOVER:
 	case UI_EVENT_MOUSEOUT:
+		pointer_x = e.mouse.x;
+		pointer_y = e.mouse.y;
+		is_pointer_event = TRUE;
 		if (w->computed_style.pointer_events == SV_NONE) {
 			break;
 		}
@@ -455,58 +465,31 @@ int ui_widget_emit_event(ui_widget_t* w, ui_event_t e, void* arg)
 		if (ui_widget_call_listeners(w, e, NULL) > 0) {
 			return 0;
 		}
-		if (!w->parent || e.cancel_bubble) {
-			return -1;
-		}
-		return ui_widget_emit_event(w->parent, e, arg);
 	}
 	if (!w->parent || e.cancel_bubble) {
 		return -1;
 	}
-	while (w->extra && w->computed_style.pointer_events == SV_NONE) {
-		ui_widget_t* w;
-		LCUI_BOOL is_pointer_event = TRUE;
-		int pointer_x, pointer_y;
-		float x, y;
-
-		switch (e.type) {
-		case UI_EVENT_CLICK:
-		case UI_EVENT_MOUSEDOWN:
-		case UI_EVENT_MOUSEUP:
-			pointer_x = e.mouse.x;
-			pointer_y = e.mouse.y;
-			break;
-		case UI_EVENT_MOUSEMOVE:
-		case UI_EVENT_MOUSEOVER:
-		case UI_EVENT_MOUSEOUT:
-			pointer_x = e.mouse.x;
-			pointer_y = e.mouse.y;
-			break;
-		default:
-			is_pointer_event = FALSE;
-			break;
-		}
-		if (!is_pointer_event) {
-			break;
-		}
+	if (!w->extra || w->computed_style.pointer_events != SV_NONE) {
+		return ui_widget_emit_event(w->parent, e, arg);
+	}
+	if (is_pointer_event) {
 		ui_widget_get_offset(w->parent, NULL, &x, &y);
 		/* 转换成相对于父级部件内容框的坐标 */
 		x = pointer_x - x;
 		y = pointer_y - y;
 		/* 从当前部件后面找到当前坐标点命中的兄弟部件 */
-		w = ui_widget_get_next_at(w, y_iround(x), y_iround(y));
-		if (!w) {
-			break;
+		sibling = ui_widget_get_next_at(w, x, y);
+		if (sibling) {
+			return ui_widget_call_listeners(sibling, e, arg);
 		}
-		return ui_widget_call_listeners(w, e, arg);
 	}
 	return ui_widget_emit_event(w->parent, e, arg);
 }
 
-static ui_widget_t* ui_get_same_parent(ui_widget_t* a, ui_widget_t* b)
+static ui_widget_t *ui_get_same_parent(ui_widget_t *a, ui_widget_t *b)
 {
 	int depth = 0, i;
-	ui_widget_t* w;
+	ui_widget_t *w;
 
 	for (w = a; w; w = w->parent) {
 		++depth;
@@ -533,21 +516,21 @@ static ui_widget_t* ui_get_same_parent(ui_widget_t* a, ui_widget_t* b)
 	return NULL;
 }
 
-static ui_widget_t* ui_widget_get_event_target(ui_widget_t* widget, float x,
+static ui_widget_t *ui_widget_get_event_target(ui_widget_t *widget, float x,
 					       float y,
 					       int inherited_pointer_events)
 {
 	int pointer_events;
 
-	ui_widget_t* child;
-	ui_widget_t* target = NULL;
+	ui_widget_t *child;
+	ui_widget_t *target = NULL;
 	list_node_t* node;
 
 	for (list_each(node, &widget->stacking_context)) {
 		child = node->data;
 		if (!child->computed_style.visible ||
 		    child->state != LCUI_WSTATE_NORMAL ||
-		    !LCUIRect_HasPoint(&child->box.border, x, y)) {
+		    !LCUIRectF_HasPoint(&child->box.border, x, y)) {
 			continue;
 		}
 		pointer_events = child->computed_style.pointer_events;
@@ -567,10 +550,10 @@ static ui_widget_t* ui_widget_get_event_target(ui_widget_t* widget, float x,
 	return target;
 }
 
-static void ui_widget_trigger_mouseover_event(ui_widget_t* widget,
-					      ui_widget_t* parent)
+static void ui_widget_trigger_mouseover_event(ui_widget_t *widget,
+					      ui_widget_t *parent)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 	ui_event_t e = { 0 };
 
 	e.cancel_bubble = FALSE;
@@ -582,10 +565,10 @@ static void ui_widget_trigger_mouseover_event(ui_widget_t* widget,
 	}
 }
 
-static void ui_widget_trigger_mouseout_event(ui_widget_t* widget,
-					     ui_widget_t* parent)
+static void ui_widget_trigger_mouseout_event(ui_widget_t *widget,
+					     ui_widget_t *parent)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 	ui_event_t e = { 0 };
 
 	e.cancel_bubble = FALSE;
@@ -597,9 +580,9 @@ static void ui_widget_trigger_mouseout_event(ui_widget_t* widget,
 	}
 }
 
-static void ui_widget_on_mouseover_event(ui_widget_t* widget)
+static void ui_widget_on_mouseover_event(ui_widget_t *widget)
 {
-	ui_widget_t* parent = NULL;
+	ui_widget_t *parent = NULL;
 
 	if (ui_events.targets[UI_WIDGET_STATUS_HOVER] == widget) {
 		return;
@@ -616,10 +599,10 @@ static void ui_widget_on_mouseover_event(ui_widget_t* widget)
 	ui_events.targets[UI_WIDGET_STATUS_HOVER] = widget;
 }
 
-static void ui_widget_on_mousedown_event(ui_widget_t* widget)
+static void ui_widget_on_mousedown_event(ui_widget_t *widget)
 {
-	ui_widget_t* parent;
-	ui_widget_t* w = ui_events.targets[UI_WIDGET_STATUS_ACTIVE];
+	ui_widget_t *parent;
+	ui_widget_t *w = ui_events.targets[UI_WIDGET_STATUS_ACTIVE];
 
 	if (w == widget) {
 		return;
@@ -634,9 +617,9 @@ static void ui_widget_on_mousedown_event(ui_widget_t* widget)
 	ui_events.targets[UI_WIDGET_STATUS_ACTIVE] = widget;
 }
 
-static void ui_clear_mouseover_target(ui_widget_t* target)
+static void ui_clear_mouseover_target(ui_widget_t *target)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 
 	if (!target) {
 		ui_widget_on_mouseover_event(NULL);
@@ -650,9 +633,9 @@ static void ui_clear_mouseover_target(ui_widget_t* target)
 	}
 }
 
-static void ui_clear_mousedown_target(ui_widget_t* target)
+static void ui_clear_mousedown_target(ui_widget_t *target)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 
 	if (!target) {
 		ui_widget_on_mousedown_event(NULL);
@@ -666,9 +649,9 @@ static void ui_clear_mousedown_target(ui_widget_t* target)
 	}
 }
 
-static void ui_clear_focus_target(ui_widget_t* target)
+static void ui_clear_focus_target(ui_widget_t *target)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 
 	if (!target) {
 		ui_events.targets[UI_WIDGET_STATUS_FOCUS] = NULL;
@@ -682,7 +665,7 @@ static void ui_clear_focus_target(ui_widget_t* target)
 	}
 }
 
-void ui_clear_event_target(ui_widget_t* w)
+void ui_clear_event_target(ui_widget_t *w)
 {
 	list_node_t *node, *prev;
 	ui_event_pack_t* pack;
@@ -702,20 +685,20 @@ void ui_clear_event_target(ui_widget_t* w)
 	ui_clear_focus_target(w);
 }
 
-INLINE LCUI_BOOL ui_widget_check_focusable(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_check_focusable(ui_widget_t *w)
 {
 	return w && w->computed_style.pointer_events != SV_NONE &&
 	       w->computed_style.focusable && !w->disabled;
 }
 
-ui_widget_t* ui_get_focus(void)
+ui_widget_t *ui_get_focus(void)
 {
 	return ui_events.targets[UI_WIDGET_STATUS_FOCUS];
 }
 
-int ui_set_focus(ui_widget_t* widget)
+int ui_set_focus(ui_widget_t *widget)
 {
-	ui_widget_t* w;
+	ui_widget_t *w;
 	ui_event_t e = { 0 };
 
 	for (w = widget; w; w = w->parent) {
@@ -745,15 +728,11 @@ int ui_set_focus(ui_widget_t* widget)
 	return 0;
 }
 
-static ui_widget_t* ui_resolve_event_target(int ix, int iy)
+static ui_widget_t *ui_resolve_event_target(float x, float y)
 {
-	float scale = ui_get_scale();
-	float x = y_iround(ix / scale);
-	float y = y_iround(iy / scale);
-
-	ui_widget_t* w;
-	ui_widget_t* root;
-	ui_widget_t* target;
+	ui_widget_t *w;
+	ui_widget_t *root;
+	ui_widget_t *target;
 
 	root = ui_root();
 	if (ui_events.mouse_capturer) {
@@ -774,8 +753,6 @@ static ui_widget_t* ui_resolve_event_target(int ix, int iy)
 
 static int ui_on_mouse_event(ui_event_t* origin_event)
 {
-	float scale;
-	ui_widget_t *target, *w;
 	ui_event_t e = *origin_event;
 
 	e.cancel_bubble = FALSE;
@@ -787,29 +764,29 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 		}
 		ui_widget_emit_event(e.target, e, NULL);
 		ui_events.click.interval = DBLCLICK_INTERVAL;
-		if (e.mouse.button == LCUI_KEY_LEFTBUTTON &&
+		if (e.mouse.button == MOUSE_BUTTON_LEFT &&
 		    ui_events.click.widget == e.target) {
 			int delta;
 			delta = (int)get_time_delta(ui_events.click.time);
 			ui_events.click.interval = delta;
-		} else if (e.mouse.button == LCUI_KEY_LEFTBUTTON &&
-			   ui_events.click.widget != target) {
+		} else if (e.mouse.button == MOUSE_BUTTON_RIGHT &&
+			   ui_events.click.widget != e.target) {
 			ui_events.click.x = e.mouse.x;
 			ui_events.click.y = e.mouse.y;
 		}
-		ui_events.click.time = LCUI_GetTime();
-		ui_events.click.widget = target;
-		ui_clear_mousedown_target(target);
-		ui_set_focus(target);
+		ui_events.click.time = get_time_ms();
+		ui_events.click.widget = e.target;
+		ui_clear_mousedown_target(e.target);
+		ui_set_focus(e.target);
 		break;
 	case UI_EVENT_MOUSEUP:
 		e.target = ui_resolve_event_target(e.mouse.x, e.mouse.y);
 		if (!e.target) {
 			return -1;
 		}
-		ui_widget_emit_event(target, e, NULL);
-		if (ui_events.targets[UI_WIDGET_STATUS_ACTIVE] != target ||
-		    e.mouse.button != LCUI_KEY_LEFTBUTTON) {
+		ui_widget_emit_event(e.target, e, NULL);
+		if (ui_events.targets[UI_WIDGET_STATUS_ACTIVE] != e.target ||
+		    e.mouse.button != MOUSE_BUTTON_LEFT) {
 			ui_events.click.x = 0;
 			ui_events.click.y = 0;
 			ui_events.click.time = 0;
@@ -818,9 +795,9 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 			break;
 		}
 		e.type = UI_EVENT_CLICK;
-		ui_widget_emit_event(target, e, NULL);
+		ui_widget_emit_event(e.target, e, NULL);
 		ui_clear_mousedown_target(NULL);
-		if (ui_events.click.widget != target) {
+		if (ui_events.click.widget != e.target) {
 			ui_events.click.x = 0;
 			ui_events.click.y = 0;
 			ui_events.click.time = 0;
@@ -833,7 +810,7 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 			ui_events.click.y = 0;
 			ui_events.click.time = 0;
 			ui_events.click.widget = NULL;
-			ui_widget_emit_event(target, e, NULL);
+			ui_widget_emit_event(e.target, e, NULL);
 		}
 		ui_clear_mousedown_target(NULL);
 		break;
@@ -842,23 +819,23 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 		if (!e.target) {
 			return -1;
 		}
-		if (abs(ui_events.click.x - e.mouse.x) >= 8 ||
-		    abs(ui_events.click.y - e.mouse.y) >= 8) {
+		if (fabs(ui_events.click.x - e.mouse.x) >= 8.f ||
+		    fabs(ui_events.click.y - e.mouse.y) >= 8.f) {
 			ui_events.click.time = 0;
 			ui_events.click.widget = NULL;
 		}
-		ui_widget_emit_event(target, e, NULL);
+		ui_widget_emit_event(e.target, e, NULL);
 		break;
 	case APP_EVENT_WHEEL:
 		e.target = ui_events.targets[UI_WIDGET_STATUS_HOVER];
 		if (!e.target) {
 			return -1;
 		}
-		ui_widget_emit_event(target, e, NULL);
+		ui_widget_emit_event(e.target, e, NULL);
 	default:
 		return -1;
 	}
-	ui_widget_on_mouseover_event(target);
+	ui_widget_on_mouseover_event(e.target);
 	return 0;
 }
 
@@ -897,7 +874,6 @@ static int ui_dispatch_touch_event(list_t* capturers, ui_touch_point_t* points,
 	list_node_t *node, *ptnode;
 	ui_event_t e = { 0 };
 	ui_widget_t *target, *root, *w;
-	ui_touch_point_t* point;
 	ui_touch_capturer_t* tc;
 
 	root = ui_root();
@@ -983,17 +959,17 @@ static int ui_on_touch_event(ui_event_t* e)
 	return 0;
 }
 
-void ui_widget_set_mouse_capture(ui_widget_t* w)
+void ui_widget_set_mouse_capture(ui_widget_t *w)
 {
 	ui_events.mouse_capturer = w;
 }
 
-void ui_widget_release_mouse_capture(ui_widget_t* w)
+void ui_widget_release_mouse_capture(ui_widget_t *w)
 {
 	ui_events.mouse_capturer = NULL;
 }
 
-int ui_widget_set_touch_capture(ui_widget_t* w, int point_id)
+int ui_widget_set_touch_capture(ui_widget_t *w, int point_id)
 {
 	int ret;
 	LCUIMutex_Lock(&ui_events.mutex);
@@ -1002,7 +978,7 @@ int ui_widget_set_touch_capture(ui_widget_t* w, int point_id)
 	return ret;
 }
 
-int ui_widget_release_touch_capture(ui_widget_t* w, int point_id)
+int ui_widget_release_touch_capture(ui_widget_t *w, int point_id)
 {
 	int ret;
 
@@ -1015,12 +991,12 @@ int ui_widget_release_touch_capture(ui_widget_t* w, int point_id)
 	return ret;
 }
 
-int ui_widget_post_surface_event(ui_widget_t* w, int event_type,
+int ui_widget_post_surface_event(ui_widget_t *w, int event_type,
 				 LCUI_BOOL sync_props)
 {
 	int* data;
 	ui_event_t e = { 0 };
-	ui_widget_t* root = ui_root();
+	ui_widget_t *root = ui_root();
 
 	if (w->parent != root && w != root) {
 		return -1;
@@ -1037,7 +1013,7 @@ int ui_widget_post_surface_event(ui_widget_t* w, int event_type,
 	return ui_widget_post_event(root, &e, data, free);
 }
 
-void ui_widget_destroy_listeners(ui_widget_t* w)
+void ui_widget_destroy_listeners(ui_widget_t *w)
 {
 	ui_event_t e = { UI_EVENT_DESTROY, 0 };
 
@@ -1088,7 +1064,7 @@ void ui_init_events(void)
 			 { UI_EVENT_FONT_FACE_LOAD, "font_face_load" } };
 
 	LCUIMutex_Init(&ui_events.mutex);
-	RBTree_Init(&ui_events.event_names);
+	rbtree_init(&ui_events.event_names);
 	list_create(&ui_events.event_mappings);
 	ui_events.targets[UI_WIDGET_STATUS_ACTIVE] = NULL;
 	ui_events.targets[UI_WIDGET_STATUS_HOVER] = NULL;

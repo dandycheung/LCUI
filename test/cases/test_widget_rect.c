@@ -2,14 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <LCUI.h>
-#include <LCUI/input.h>
 #include <LCUI/ui.h>
 #include "ctest.h"
 
 void test_widget_rect(void)
 {
-	ui_widget_t* root;
-	ui_widget_t* parent, child;
+	ui_widget_t *root;
+	ui_widget_t *parent, *child;
 	app_event_t ev;
 	pd_rect_t *rect;
 	pd_rect_t expected_rect;
@@ -33,21 +32,19 @@ void test_widget_rect(void)
 	list_destroy(&rects, free);
 
 	ev.type = APP_EVENT_MOUSEMOVE;
-	ev.motion.x = 150;
-	ev.motion.y = 150;
-	ev.motion.xrel = 0;
-	ev.motion.yrel = 0;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	ev.mouse.x = 150;
+	ev.mouse.y = 150;
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 	it_b("app.trigger({ type: 'mousemove', x: 150, y: 150}), "
 	     "root.getInvalidArea().length == 0",
 	     rects.length == 0, TRUE);
 
-	ev.motion.x = 80;
-	ev.motion.y = 80;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	ev.mouse.x = 80;
+	ev.mouse.y = 80;
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 	rect = rects.head.next->data;
 	it_b("app.trigger({ type: 'mousemove', x: 80, y: 80 }), "
@@ -61,10 +58,10 @@ void test_widget_rect(void)
 	it_rect("root.getInvalidArea()[0]", rect, &expected_rect);
 	list_destroy(&rects, free);
 
-	ev.motion.x = 40;
-	ev.motion.y = 40;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	ev.mouse.x = 40;
+	ev.mouse.y = 40;
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 	it_b("app.trigger({ type: 'mousemove', x: 40, y: 40 }), "
 	     "root.getInvalidArea().length == 0",
@@ -74,8 +71,8 @@ void test_widget_rect(void)
 	ev.mouse.x = 40;
 	ev.mouse.y = 40;
 	ev.mouse.button = MOUSE_BUTTON_LEFT;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 	it_b("app.trigger({ type: 'mousedown', x: 40, y: 40 }), "
 	     "root.getInvalidArea().length == 1",
@@ -87,8 +84,8 @@ void test_widget_rect(void)
 	list_destroy(&rects, free);
 
 	ev.type = APP_EVENT_MOUSEUP;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 	it_b("app.trigger({ type: 'mouseup', x: 40, y: 40 }), "
 	     "root.getInvalidArea().length == 1",
@@ -100,21 +97,19 @@ void test_widget_rect(void)
 	list_destroy(&rects, free);
 
 	ev.type = APP_EVENT_MOUSEMOVE;
-	ev.motion.x = 80;
-	ev.motion.y = 80;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	ev.mouse.x = 80;
+	ev.mouse.y = 80;
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 	it_b("app.trigger({ type: 'mousemove', x: 80, y: 80 }), "
 	     "root.getInvalidArea().length == 0",
 	     rects.length == 0, TRUE);
 
-	ev.motion.x = 150;
-	ev.motion.y = 150;
-	ev.motion.xrel = 0;
-	ev.motion.yrel = 0;
-	LCUI_TriggerEvent(&ev, NULL);
-	ui_update();
+	ev.mouse.x = 150;
+	ev.mouse.y = 150;
+	app_post_event(&ev);
+	lcui_process_events();
 	ui_widget_get_dirty_rects(root, &rects);
 
 	it_b("app.trigger({ type: 'mousemove', x: 150, y: 150 }), "

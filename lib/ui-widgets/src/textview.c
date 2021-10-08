@@ -35,6 +35,7 @@
 #include <LCUI.h>
 #include <LCUI/ui.h>
 #include <LCUI/font.h>
+#include <LCUI/graph.h>
 #include <LCUI/gui/css_parser.h>
 #include <LCUI/gui/css_fontstyle.h>
 #include <LCUI/gui/widget/textview.h>
@@ -389,18 +390,15 @@ void ui_textview_set_multiline(ui_widget_t* w, LCUI_BOOL enable)
 
 static void textview_on_font_face_load(ui_widget_t *w, ui_event_t *e, void *arg)
 {
-	size_t count = 0;
 	LCUI_TextView txt;
 	list_node_t *node;
 
 	for (list_each(node, &self.list)) {
 		txt = node->data;
 		if (txt->widget->state != LCUI_WSTATE_DELETED) {
-			ui_widget_update_style(txt->widget, TRUE);
+			ui_widget_refresh_style(txt->widget);
 		}
-		count += 1;
 	}
-	return count;
 }
 
 static void TextVIew_OnTask(ui_widget_t* w, int task)
@@ -448,5 +446,5 @@ void LCUIWidget_AddTextView(void)
 void LCUIWidget_FreeTextView(void)
 {
 	list_destroy_without_node(&self.list, NULL);
-	ui_off_event("font_face_load", textview_on_font_face_load, NULL, NULL);
+	ui_off_event("font_face_load", textview_on_font_face_load);
 }

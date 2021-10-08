@@ -465,10 +465,10 @@ LCUI_SelectorNode ui_widget_create_selector_node(ui_widget_t* w)
 		sn->type = strdup2(w->type);
 	}
 	for (i = 0; w->classes && w->classes[i]; ++i) {
-		sortedstrlist_add(&sn->classes, w->classes[i]);
+		strlist_sorted_add(&sn->classes, w->classes[i]);
 	}
 	for (i = 0; w->status && w->status[i]; ++i) {
-		sortedstrlist_add(&sn->status, w->status[i]);
+		strlist_sorted_add(&sn->status, w->status[i]);
 	}
 	SelectorNode_Update(sn);
 	return sn;

@@ -1,5 +1,4 @@
 ﻿#include <LCUI.h>
-#include <LCUI/display.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 #include "ctest.h"
@@ -34,11 +33,9 @@ static void check_widget_loaded_from_nested_xml(void)
 
 void test_xml_parser(void)
 {
-	ui_widget_t* root, pack;
+	ui_widget_t *pack;
 
 	lcui_init();
-	LCUIDisplay_SetSize(960, 680);
-	root = ui_root();
 	it_b("load XML file",
 	     (pack = LCUIBuilder_LoadFile("test_xml_parser.xml")) != NULL,
 	     TRUE);
@@ -46,8 +43,7 @@ void test_xml_parser(void)
 		lcui_destroy();
 		return;
 	}
-	ui_widget_update_style(root, TRUE);
-	ui_widget_append(root, pack);
+	ui_root_append(pack);
 	ui_widget_unwrap(pack);
 	ui_update();
 	describe("check widget attribute", check_widget_attribute);

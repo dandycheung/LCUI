@@ -1,7 +1,5 @@
 #include "ctest.h"
-#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
-#include <LCUI/display.h>
+#include <LCUI.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 
@@ -462,13 +460,13 @@ static void test_browser_layout(void)
 
 static void test_flex_layout_1280(void)
 {
-	LCUIDisplay_SetSize(1280, 800);
+	ui_widget_resize(ui_root(), 1280, 800);
 	test_flex_layout_with_content_width(580);
 }
 
 static void test_flex_layout_600(void)
 {
-	LCUIDisplay_SetSize(600, 400);
+	ui_widget_resize(ui_root(), 600, 400);
 	test_flex_layout_with_content_width(580 - 14);
 }
 
@@ -484,7 +482,7 @@ static void test_flex_layout_320(void)
 	pd_rectf_t rect;
 
 	container = ui_widget_get_child(ui_get_widget("main"), 0);
-	LCUIDisplay_SetSize(320, 240);
+	ui_widget_resize(ui_root(), 320, 240);
 	ui_update();
 
 	rect.y = 10;

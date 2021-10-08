@@ -1,6 +1,5 @@
 ﻿#include "ctest.h"
 #include <LCUI.h>
-#include <LCUI/display.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 #include <LCUI/gui/widget/textview.h>
@@ -171,7 +170,7 @@ static void test_block_layout_1280(void)
 	pd_rectf_t rect;
 
 	container = ui_widget_get_child(ui_get_widget("main"), 0);
-	LCUIDisplay_SetSize(1280, 800);
+	ui_widget_resize(ui_root(), 1280, 800);
 	ui_update();
 
 	rect.x = 10;
@@ -438,7 +437,7 @@ static void test_block_layout_600(void)
 	pd_rectf_t rect;
 
 	container = ui_widget_get_child(ui_get_widget("main"), 0);
-	LCUIDisplay_SetSize(600, 400);
+	ui_widget_resize(ui_root(), 600, 400);
 	ui_update();
 
 	rect.x = 10;
@@ -623,7 +622,7 @@ static void test_block_layout_320(void)
 	pd_rectf_t rect;
 
 	container = ui_widget_get_child(ui_get_widget("main"), 0);
-	LCUIDisplay_SetSize(320, 240);
+	ui_widget_resize(ui_root(), 320, 240);
 	ui_update();
 
 	rect.x = 10;

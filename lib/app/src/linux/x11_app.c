@@ -207,7 +207,7 @@ static void x11_app_wait_event(void)
 	return FALSE;
 }
 
-static void x11_app_process_native_events(void)
+static void x11_app_process_native_event(void)
 {
 	MSG msg;
 	list_node_t *node;
@@ -310,7 +310,7 @@ static app_window_t *x11_app_window_create(const wchar_t *title, int x, int y,
 	wnd->window =
 	    XCreateSimpleWindow(x11_app.display, x11_app.win_root, x, y, width,
 				height, 1, bdcolor, bgcolor);
-	LinkedList_AppendNode(&x11_app.windows, &wnd->node);
+	list_append_node(&x11_app.windows, &wnd->node);
 	return wnd;
 }
 
@@ -377,7 +377,7 @@ static void x11_app_window_set_size(app_window_t *wnd, int width, int height)
 		logger_error("[x11_app] unsupport depth: %d.\n", depth);
 		break;
 	}
-	Graph_Create(&wnd->fb, width, height);
+	pd_canvas_create(&wnd->fb, width, height);
 	visual = DefaultVisual(x11.app->display, x11.app->screen);
 	wnd->ximage =
 	    XCreateImage(x11.app->display, visual, depth, ZPixmap, 0,

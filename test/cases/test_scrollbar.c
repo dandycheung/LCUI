@@ -1,5 +1,4 @@
 #include <LCUI.h>
-#include <LCUI/display.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/widget/scrollbar.h>
 #include <LCUI/gui/builder.h>
@@ -63,7 +62,6 @@ const char *test_content = "\n\
 /* Build content view with native C code */
 void BuildContentView(void)
 {
-	ui_widget_t* root = ui_root();
 	ui_widget_t* container = ui_create_widget(NULL);
 	ui_widget_t* content = ui_create_widget("textview");
 	ui_widget_t* vscrollbar = ui_create_widget("scrollbar");
@@ -78,7 +76,7 @@ void BuildContentView(void)
 	ui_widget_append(container, content);
 	ui_widget_append(container, vscrollbar);
 	ui_widget_append(container, hscrollbar);
-	ui_widget_append(root, container);
+	ui_root_append(container);
 }
 
 /* Build content view with the XML code in test_scrollbar.xml */
@@ -102,10 +100,10 @@ void test_scrollbar(void)
 	ui_widget_t* content;
 
 	lcui_init();
-	LCUIDisplay_SetSize(800, 640);
+	ui_widget_resize(ui_root(), 800, 640);
 	ui_load_css_string(test_css, __FILE__);
 	BuildContentView();
-	LCUI_RunFrame();
+	lcui_process_events();
 
 	content = ui_get_widget("license_content");
 	left = content->computed_style.left;
@@ -114,21 +112,21 @@ void test_scrollbar(void)
 	e.type = APP_EVENT_MOUSEMOVE;
 	e.mouse.x = 300;
 	e.mouse.y = 275;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	e.type = APP_EVENT_MOUSEDOWN;
 	e.mouse.button = MOUSE_BUTTON_LEFT;
 	e.mouse.x = 300;
 	e.mouse.y = 275;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	e.type = APP_EVENT_MOUSEMOVE;
 	e.mouse.x = 600;
 	e.mouse.y = 275;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	it_b("content should be moved to the left",
 	     content->computed_style.left < left &&
@@ -141,13 +139,13 @@ void test_scrollbar(void)
 	e.type = APP_EVENT_MOUSEMOVE;
 	e.mouse.x = 400;
 	e.mouse.y = 275;
-	LCUI_TriggerEvent(&e, NULL);
+	app_post_event(&e);
 	e.type = APP_EVENT_MOUSEUP;
 	e.mouse.button = MOUSE_BUTTON_LEFT;
 	e.mouse.x = 400;
 	e.mouse.y = 275;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	it_b("content should be moved to the right",
 	     content->computed_style.left > left &&
@@ -160,21 +158,21 @@ void test_scrollbar(void)
 	e.type = APP_EVENT_MOUSEMOVE;
 	e.mouse.x = 555;
 	e.mouse.y = 45;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	e.type = APP_EVENT_MOUSEDOWN;
 	e.mouse.button = MOUSE_BUTTON_LEFT;
 	e.mouse.x = 555;
 	e.mouse.y = 45;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	e.type = APP_EVENT_MOUSEMOVE;
 	e.mouse.x = 555;
 	e.mouse.y = 200;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	it_b("content should be moved to the top",
 	     content->computed_style.left == left &&
@@ -187,13 +185,13 @@ void test_scrollbar(void)
 	e.type = APP_EVENT_MOUSEMOVE;
 	e.mouse.x = 555;
 	e.mouse.y = 100;
-	LCUI_TriggerEvent(&e, NULL);
+	app_post_event(&e);
 	e.type = APP_EVENT_MOUSEUP;
 	e.mouse.button = MOUSE_BUTTON_LEFT;
 	e.mouse.x = 555;
 	e.mouse.y = 100;
-	LCUI_TriggerEvent(&e, NULL);
-	LCUI_RunFrame();
+	app_post_event(&e);
+	lcui_process_events();
 
 	it_b("the content should have scrolled to the bottom",
 	     content->computed_style.left == left &&

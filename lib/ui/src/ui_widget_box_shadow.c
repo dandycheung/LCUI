@@ -26,10 +26,10 @@ void ui_widget_compute_box_shadow_style(ui_widget_t* w)
 {
 	int key;
 	LCUI_Style s;
-	LCUI_BoxShadowStyle* sd;
+	pd_boxshadow_style_t* sd;
 
 	sd = &w->computed_style.shadow;
-	memset(sd, 0, sizeof(LCUI_BoxShadowStyle));
+	memset(sd, 0, sizeof(pd_boxshadow_style_t));
 	for (key = key_box_shadow_start; key <= key_box_shadow_end; ++key) {
 		s = &w->style->sheet[key];
 		if (!s->is_valid) {
@@ -59,8 +59,8 @@ void ui_widget_compute_box_shadow_style(ui_widget_t* w)
 
 void ui_widget_compute_box_shadow(ui_widget_t* w, pd_boxshadow_t* out)
 {
-	LCUI_BoxShadowStyle* s;
-	LCUI_BorderStyle* b;
+	pd_boxshadow_style_t* s;
+	pd_border_style_t* b;
 
 	b = &w->computed_style.border;
 	s = &w->computed_style.shadow;
@@ -83,6 +83,6 @@ void ui_widget_paint_box_shadow(ui_widget_t* w, pd_paint_context_t *paint,
 	box.x = box.y = 0;
 	box.width = style->canvas_box.width;
 	box.height = style->canvas_box.height;
-	BoxShadow_Paint(&style->shadow, &box, style->border_box.width,
+	pd_boxshadow_paint(&style->shadow, &box, style->border_box.width,
 			style->border_box.height, paint);
 }

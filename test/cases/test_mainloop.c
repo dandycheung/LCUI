@@ -1,15 +1,14 @@
 #include <stdlib.h>
 #include <LCUI.h>
 #include <LCUI/ui.h>
+#include <LCUI/thread.h>
 #include <LCUI/gui/widget/button.h>
 #include <LCUI/timer.h>
-#include <LCUI/input.h>
-#include <LCUI/display.h>
 #include "ctest.h"
 
 static void OnRefreshScreen(void *arg)
 {
-	LCUIDisplay_InvalidateArea(NULL);
+	ui_widget_refresh_style(ui_root());
 }
 
 static void OnQuit(void *arg)
@@ -17,14 +16,16 @@ static void OnQuit(void *arg)
 	lcui_quit();
 }
 
-static void OnBtnClick(ui_widget_t* w, ui_event_t* e, void *arg)
+static void OnBtnClick(ui_widget_t* w, ui_event_t* ui_event, void *arg)
 {
-	LCUI_MainLoop loop;
+	LCUI_BOOL active = TRUE;
+	app_event_t e = { 0 };
 
-	loop = LCUIMainLoop_New();
 	lcui_set_timeout(10, OnRefreshScreen, NULL);
 	lcui_set_timeout(50, OnQuit, NULL);
-	LCUIMainLoop_Run(loop);
+	while (lcui_get_event(&e) != 0) {
+		lcui_process_event(&e);
+	}
 }
 
 static void OnTriggerBtnClick(void *arg)
@@ -35,10 +36,9 @@ static void OnTriggerBtnClick(void *arg)
 	e.mouse.button = MOUSE_BUTTON_LEFT;
 	e.mouse.x = 5;
 	e.mouse.y = 5;
-	LCUI_TriggerEvent(&e, NULL);
-
+	app_post_event(&e);
 	e.type = APP_EVENT_MOUSEUP;
-	LCUI_TriggerEvent(&e, NULL);
+	app_post_event(&e);
 }
 
 static void ObserverThread(void *arg)
@@ -60,15 +60,14 @@ static void ObserverThread(void *arg)
 void test_mainloop(void)
 {
 	LCUI_Thread tid;
-	ui_widget_t* root, btn;
+	ui_widget_t *btn;
 	LCUI_BOOL exited = FALSE;
 
 	lcui_init();
 	btn = ui_create_widget("button");
-	root = ui_root();
 	Button_SetText(btn, "button");
 	ui_widget_on(btn, "click", OnBtnClick, NULL, NULL);
-	ui_widget_append(root, btn);
+	ui_root_append(btn);
 	/* Observe whether the main loop has exited in a new thread */
 	LCUIThread_Create(&tid, ObserverThread, &exited);
 	/* Trigger the click event after the first frame is updated */

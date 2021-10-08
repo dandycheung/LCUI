@@ -38,10 +38,8 @@
 #include <LCUI/gui/css_library.h>
 #include <LCUI/gui/css_parser.h>
 
-/* clang-format off */
-
-#define MAX_NAME_LEN	256
-#define LEN(A)		sizeof(A) / sizeof(*A)
+#define MAX_NAME_LEN 256
+#define LEN(A) sizeof(A) / sizeof(*A)
 
 enum SelectorRank {
 	GENERAL_RANK = 0,
@@ -64,54 +62,54 @@ enum SelectorFinderLevel {
 
 /* 样式表查找器的上下文数据结构 */
 typedef struct NamesFinderRec_ {
-	int level;			/**< 当前选择器层级 */
-	int class_i;			/**< 当前处理到第几个类名 */
-	int status_i;			/**< 当前处理到第几个状态名（伪类名） */
-	int name_i;			/**< 选择器名称从第几个字符开始 */
-	char name[MAX_NAME_LEN];	/**< 选择器名称缓存 */
-	LCUI_SelectorNode node;		/**< 针对的选择器结点 */
+	int level;    /**< 当前选择器层级 */
+	int class_i;  /**< 当前处理到第几个类名 */
+	int status_i; /**< 当前处理到第几个状态名（伪类名） */
+	int name_i;   /**< 选择器名称从第几个字符开始 */
+	char name[MAX_NAME_LEN]; /**< 选择器名称缓存 */
+	LCUI_SelectorNode node;  /**< 针对的选择器结点 */
 } NamesFinderRec, *NamesFinder;
 
 /** 样式链接记录组 */
 typedef struct StyleLinkGroupRec_ {
-	dict_t *links;             /**< 样式链接表 */
+	dict_t *links;           /**< 样式链接表 */
 	char *name;              /**< 选择器名称 */
 	LCUI_SelectorNode snode; /**< 选择器结点 */
 } StyleLinkGroupRec, *StyleLinkGroup;
 
 /** 样式结点记录 */
 typedef struct StyleNodeRec_ {
-	int rank;		/**< 权值，决定优先级 */
-	int batch_num;		/**< 批次号 */
-	char *space;		/**< 所属的空间 */
-	char *selector;		/**< 选择器 */
-	LCUI_StyleList list;	/**< 样式表 */
-	list_node_t node;	/**< 在链表中的结点 */
+	int rank;            /**< 权值，决定优先级 */
+	int batch_num;       /**< 批次号 */
+	char *space;         /**< 所属的空间 */
+	char *selector;      /**< 选择器 */
+	LCUI_StyleList list; /**< 样式表 */
+	list_node_t node;    /**< 在链表中的结点 */
 } StyleNodeRec, *StyleNode;
 
 /** 样式链接记录 */
 typedef struct StyleLinkRec_ {
-	char *selector;		/**< 选择器 */
-	StyleLinkGroup group;	/**< 所属组 */
-	list_t styles;	/**< 作用于当前选择器的样式 */
-	dict_t *parents;		/**< 父级节点 */
+	char *selector;       /**< 选择器 */
+	StyleLinkGroup group; /**< 所属组 */
+	list_t styles;        /**< 作用于当前选择器的样式 */
+	dict_t *parents;      /**< 父级节点 */
 } StyleLinkRec, *StyleLink;
 
 static struct {
 	LCUI_BOOL active;
-	list_t groups;		/**< 样式组列表 */
-	dict_t *cache;			/**< 样式表缓存，以选择器的 hash 值索引 */
-	dict_t *names;			/**< 样式属性名称表，以值的名称索引 */
-	dict_t *value_keys;		/**< 样式属性值表，以值的名称索引 */
-	dict_t *value_names;		/**< 样式属性值名称表，以值索引 */
-	dict_type_t names_dict;		/**< 样式属性名称表的类型 */
-	dict_type_t value_keys_dict;	/**< 样式属性值表的类型 */
-	dict_type_t value_names_dict;	/**< 样式属性值名称表的类型 */
-	dict_type_t style_link_dict;	/**< 样式链接表的类型 */
-	dict_type_t style_group_dict;	/**< 样式组的类型 */
-	dict_type_t cache_dict;		/**< 样式表缓存的类型 */
-	strpool_t *strpool;		/**< 字符串池 */
-	int count;			/**< 当前记录的属性数量 */
+	list_t groups; /**< 样式组列表 */
+	dict_t *cache; /**< 样式表缓存，以选择器的 hash 值索引 */
+	dict_t *names; /**< 样式属性名称表，以值的名称索引 */
+	dict_t *value_keys;  /**< 样式属性值表，以值的名称索引 */
+	dict_t *value_names; /**< 样式属性值名称表，以值索引 */
+	dict_type_t names_dict;       /**< 样式属性名称表的类型 */
+	dict_type_t value_keys_dict;  /**< 样式属性值表的类型 */
+	dict_type_t value_names_dict; /**< 样式属性值名称表的类型 */
+	dict_type_t style_link_dict;  /**< 样式链接表的类型 */
+	dict_type_t style_group_dict; /**< 样式组的类型 */
+	dict_type_t cache_dict;       /**< 样式表缓存的类型 */
+	strpool_t *strpool;           /**< 字符串池 */
+	int count;                    /**< 当前记录的属性数量 */
 } library;
 
 /** 样式字符串值与标识码 */
@@ -241,10 +239,10 @@ static KeyNameGroupRec style_value_map[] = {
 
 static int LCUI_DirectAddStyleName(int key, const char *name)
 {
-	if(!library.names->type->val_dup){
+	if (!library.names->type->val_dup) {
 		return -2;
 	}
-	return dict_add(library.names, &key, name);
+	return dict_add(library.names, &key, (void*)name);
 }
 
 int LCUI_SetStyleName(int key, const char *name)
@@ -1646,7 +1644,7 @@ static void StyleNameDestructor(void *privdata, void *val)
 	free(val);
 }
 
-static unsigned int IntKeyDict_HashFunction(const void *key)
+static uint64_t IntKeyDict_HashFunction(const void *key)
 {
 	return (*(unsigned int *)key);
 }

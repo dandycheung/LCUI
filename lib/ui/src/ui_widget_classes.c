@@ -6,7 +6,7 @@ static void ui_widget_refresh_children_by_classes(ui_widget_t* w)
 {
 	list_node_t *node;
 
-	if (w->rules && w->rules->ignore_classes_change) {
+	if (w->extra && w->extra->rules.ignore_classes_change) {
 		return;
 	}
 	ui_widget_add_task(w, UI_TASK_REFRESH_STYLE);
@@ -18,7 +18,7 @@ static void ui_widget_refresh_children_by_classes(ui_widget_t* w)
 static int ui_widget_handle_classes_change(ui_widget_t* w, const char *name)
 {
 	ui_widget_refresh_style(w);
-	if (w->rules && w->rules->ignore_classes_change) {
+	if (w->extra && w->extra->rules.ignore_classes_change) {
 		return 0;
 	}
 	/* If widget is not ready, indicate that the style of the children has

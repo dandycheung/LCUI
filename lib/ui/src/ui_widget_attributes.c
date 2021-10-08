@@ -24,7 +24,7 @@ int ui_widget_set_attribute_ex(ui_widget_t* w, const char *name, void *value,
 
 	if (!dict_type_available) {
 		dict_init_string_key_type(&dict_type);
-		dict_type.valDestructor = ui_widget_attribute_destructor;
+		dict_type.val_destructor = ui_widget_attribute_destructor;
 		dict_type_available = TRUE;
 	}
 	if (!w->attributes) {

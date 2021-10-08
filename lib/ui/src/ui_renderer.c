@@ -1,4 +1,5 @@
 ﻿#include <LCUI.h>
+#include <LCUI/graph.h>
 #include "../include/ui.h"
 #include "private.h"
 
@@ -66,7 +67,7 @@ static LCUI_BOOL ui_widget_is_paintable(ui_widget_t *w)
 {
 	const ui_widget_style_t *s = &w->computed_style;
 	if (s->background.color.alpha > 0 ||
-	    pd_canvas_is_valid(&s->background.image) || s->border.top.width > 0 ||
+	    pd_canvas_is_valid(s->background.image) || s->border.top.width > 0 ||
 	    s->border.right.width > 0 || s->border.bottom.width > 0 ||
 	    s->border.left.width > 0 || s->shadow.blur > 0 ||
 	    s->shadow.spread > 0) {
@@ -174,7 +175,7 @@ LCUI_BOOL ui_widget_mark_dirty_rect(ui_widget_t *w, pd_rectf_t *in_rect,
 		LCUIRectF_GetOverlayRect(&rect, &visible_area, &rect); \
 		if (rect.width > 0 && rect.height > 0) {               \
 			actual_rect = malloc(sizeof(pd_rect_t));       \
-			ui_compute_rect_actual(&rect, actual_rect);    \
+			ui_compute_rect_actual(actual_rect, &rect);    \
 			list_append(rects, actual_rect);         \
 		}                                                      \
 	} while (0)

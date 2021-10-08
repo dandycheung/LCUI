@@ -785,6 +785,9 @@ int pd_canvas_create(pd_canvas_t *canvas, unsigned width, unsigned height)
 
 pd_bool pd_canvas_is_valid(const pd_canvas_t *canvas)
 {
+	if (!canvas) {
+		return FALSE;
+	}
 	if (canvas->quote.is_valid) {
 		return canvas->quote.source && canvas->quote.source->width > 0 &&
 		       canvas->quote.source->height > 0;

@@ -1,6 +1,6 @@
-﻿#include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+﻿#include <LCUI.h>
 #include <LCUI/font.h>
+#include <LCUI/ui.h>
 #include <LCUI/gui/css_library.h>
 #include <LCUI/gui/css_parser.h>
 #include "ctest.h"

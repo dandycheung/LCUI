@@ -1,16 +1,7 @@
 ﻿#include <stdio.h>
 #include <LCUI.h>
-#include <LCUI/settings.h>
-#include <LCUI/main.h>
 #include <LCUI/timer.h>
 #include "ctest.h"
-
-static int settings_change_count = 0;
-
-static void on_settings_change(app_event_t *object, void *data)
-{
-	++settings_change_count;
-}
 
 static void check_settings_frame_rate_cap(void *arg)
 {
@@ -26,7 +17,7 @@ static void check_settings_frame_rate_cap(void *arg)
 
 static void test_default_settings(void)
 {
-	LCUI_SettingsRec settings;
+	lcui_settings_t settings;
 
 	lcui_init();
 	lcui_reset_settings();
@@ -43,10 +34,7 @@ static void test_default_settings(void)
 
 static void test_apply_settings(void)
 {
-	LCUI_SettingsRec settings;
-
-	lcui_init();
-	int handler = LCUI_BindEvent(LCUI_SETTINGS_CHANGE, on_settings_change, NULL, NULL);
+	lcui_settings_t settings;
 
 	settings.frame_rate_cap = 60;
 	settings.parallel_rendering_threads = 2;
@@ -54,6 +42,7 @@ static void test_apply_settings(void)
 	settings.fps_meter = TRUE;
 	settings.paint_flashing = TRUE;
 
+	lcui_init();
 	lcui_apply_settings(&settings);
 	lcui_get_settings(&settings);
 	it_i("check frame rate cap", settings.frame_rate_cap, 60);
@@ -63,27 +52,26 @@ static void test_apply_settings(void)
 	it_b("check fps meter", settings.fps_meter, TRUE);
 	it_b("check paint flashing", settings.paint_flashing, TRUE);
 
-	it_i("check settings change count", settings_change_count, 1);
-
 	settings.frame_rate_cap = -1;
 	settings.parallel_rendering_threads = -1;
 
 	lcui_apply_settings(&settings);
 	lcui_get_settings(&settings);
+
 	it_i("check frame rate cap minimum", settings.frame_rate_cap, 1);
 	it_i("check parallel rendering threads minimum",
 	     settings.parallel_rendering_threads, 1);
-	it_i("check settings change count", settings_change_count, 2);
 
 	lcui_reset_settings();
-	it_i("check settings change count", settings_change_count, 3);
-	LCUI_UnbindEvent(handler);
+
+	it_i("check frame rate cap", settings.frame_rate_cap, LCUI_MAX_FRAMES_PER_SEC);
 	lcui_destroy();
 }
 
 void test_settings_frame_rate_cap(void)
 {
-	LCUI_SettingsRec settings;
+	lcui_settings_t settings;
+
 	lcui_init();
 	lcui_get_settings(&settings);
 

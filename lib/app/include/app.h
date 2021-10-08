@@ -1,7 +1,8 @@
 ﻿#ifndef LIBAPP_INCLUDE_APP_H
 #define LIBAPP_INCLUDE_APP_H
 
-#include <LCUI.h>
+#include <LCUI_Build.h>
+#include <LCUI/types.h>
 
 #ifdef _WIN32
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
@@ -283,10 +284,10 @@ typedef struct app_native_event_listener_t {
 
 // App events
 
-void app_init_events(void);
-void app_destroy_events(void);
-int app_post_event(app_event_t *e);
-int app_poll_event(app_event_t *e);
+LCUI_API void app_init_events(void);
+LCUI_API void app_destroy_events(void);
+LCUI_API int app_post_event(app_event_t *e);
+LCUI_API int app_poll_event(app_event_t *e);
 
 // Step timer
 
@@ -330,38 +331,43 @@ void step_timer_tick(step_timer_t *timer, step_timer_handler_t handler,
 #define APP_WINDOW_DEFAULT_WIDTH 800
 #define APP_WINDOW_DEFAULT_HEIGHT 600
 
-int app_get_screen_width(void);
-int app_get_screen_height(void);
-void *app_window_get_handle(app_window_t *wnd);
+LCUI_API int app_get_screen_width(void);
+LCUI_API int app_get_screen_height(void);
+LCUI_API void *app_window_get_handle(app_window_t *wnd);
 
-app_window_t *app_get_window_by_handle(void *handle);
-app_window_t *app_window_create(const wchar_t *title, int x, int y, int width,
+LCUI_API app_window_t *app_get_window_by_handle(void *handle);
+LCUI_API app_window_t *app_window_create(const wchar_t *title, int x, int y, int width,
 				int height, app_window_t *parent);
 
-void app_window_close(app_window_t *wnd);
-void app_window_destroy(app_window_t *wnd);
-void app_window_set_position(app_window_t *wnd, int x, int y);
-void app_window_set_framebuffer_size(app_window_t *wnd, int width, int height);
-void app_window_set_size(app_window_t *wnd, int width, int height);
-void app_window_show(app_window_t *wnd);
-void app_window_hide(app_window_t *wnd);
-void app_window_set_title(app_window_t *wnd, const wchar_t *title);
-int app_window_get_width(app_window_t *wnd);
-int app_window_get_height(app_window_t *wnd);
-void app_window_set_min_width(app_window_t *wnd, int min_width);
-void app_window_set_min_height(app_window_t *wnd, int min_height);
-void app_window_set_max_width(app_window_t *wnd, int max_width);
-void app_window_set_max_height(app_window_t *wnd, int max_height);
-app_window_paint_t *app_window_begin_paint(app_window_t *wnd, pd_rect_t *rect);
-void app_window_end_paint(app_window_t *wnd, app_window_paint_t *paint);
-void app_window_present(app_window_t *wnd);
+LCUI_API void app_window_close(app_window_t *wnd);
+LCUI_API void app_window_destroy(app_window_t *wnd);
+LCUI_API void app_window_set_position(app_window_t *wnd, int x, int y);
+LCUI_API void app_window_set_framebuffer_size(app_window_t *wnd, int width, int height);
+LCUI_API void app_window_set_size(app_window_t *wnd, int width, int height);
+LCUI_API void app_window_show(app_window_t *wnd);
+LCUI_API void app_window_hide(app_window_t *wnd);
+LCUI_API void app_window_activate(app_window_t *wnd);
+LCUI_API void app_window_set_title(app_window_t *wnd, const wchar_t *title);
+LCUI_API int app_window_get_width(app_window_t *wnd);
+LCUI_API int app_window_get_height(app_window_t *wnd);
+LCUI_API void app_window_set_min_width(app_window_t *wnd, int min_width);
+LCUI_API void app_window_set_min_height(app_window_t *wnd, int min_height);
+LCUI_API void app_window_set_max_width(app_window_t *wnd, int max_width);
+LCUI_API void app_window_set_max_height(app_window_t *wnd, int max_height);
+LCUI_API app_window_paint_t *app_window_begin_paint(app_window_t *wnd, pd_rect_t *rect);
+LCUI_API void app_window_end_paint(app_window_t *wnd, app_window_paint_t *paint);
+LCUI_API void app_window_present(app_window_t *wnd);
 
 // Native events
 
-int app_add_native_event_listener(int event_type,
+LCUI_API int app_process_native_event(void);
+
+LCUI_API int app_process_native_events(void);
+
+LCUI_API int app_add_native_event_listener(int event_type,
 				  app_native_event_handler_t handler,
 				  void *data);
-int app_remove_native_event_listener(int event_type,
+LCUI_API int app_remove_native_event_listener(int event_type,
 				     app_native_event_handler_t handler);
 
 INLINE int app_on_native_event(int event_type,
@@ -378,20 +384,20 @@ INLINE int app_off_native_event(int event_type,
 
 // Events
 
-int app_touch_event_init(app_event_t *e, touch_point_t *points, int n_points);
-int app_composition_event_init(app_event_t *e, const wchar_t *text, size_t len);
-int app_event_copy(app_event_t *dest, app_event_t *src);
-void app_event_destroy(app_event_t *e);
-int app_touch_event_init(app_event_t *e, touch_point_t *points, int n_points);
-void app_init_events(void);
-void app_destroy_events(void);
-int app_post_event(app_event_t *e);
-int app_process_event(app_event_t *e);
-int app_poll_event(app_event_t *e);
+LCUI_API int app_touch_event_init(app_event_t *e, touch_point_t *points, int n_points);
+LCUI_API int app_composition_event_init(app_event_t *e, const wchar_t *text, size_t len);
+LCUI_API int app_event_copy(app_event_t *dest, app_event_t *src);
+LCUI_API void app_event_destroy(app_event_t *e);
+LCUI_API int app_touch_event_init(app_event_t *e, touch_point_t *points, int n_points);
+LCUI_API void app_init_events(void);
+LCUI_API void app_destroy_events(void);
+LCUI_API int app_post_event(app_event_t *e);
+LCUI_API int app_process_event(app_event_t *e);
+LCUI_API int app_poll_event(app_event_t *e);
 
-int app_add_event_listener(int event_type, app_event_handler_t handler,
+LCUI_API int app_add_event_listener(int event_type, app_event_handler_t handler,
 			   void *data);
-int app_remove_event_listener(int event_type, app_event_handler_t handler);
+LCUI_API int app_remove_event_listener(int event_type, app_event_handler_t handler);
 
 INLINE int app_on_event(int event_type, app_event_handler_t handler, void *data)
 {
@@ -405,16 +411,17 @@ INLINE int app_off_event(int event_type, app_event_handler_t handler)
 
 // Engine
 
-int app_init_engine(const wchar_t *name);
-void app_destroy_engine(void);
+LCUI_API int app_init_engine(const wchar_t *name);
+LCUI_API void app_destroy_engine(void);
 
 // Base
 
-void app_set_instance(void *instance);
-app_id_t app_get_id(void);
-int app_init(const wchar_t *name);
-void app_quit(void);
-void app_destroy(void);
+LCUI_API void app_set_instance(void *instance);
+LCUI_API app_id_t app_get_id(void);
+LCUI_API void app_present(void);
+LCUI_API int app_init(const wchar_t *name);
+LCUI_API void app_quit(void);
+LCUI_API void app_destroy(void);
 
 // Input method engine
 

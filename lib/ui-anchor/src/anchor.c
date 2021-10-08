@@ -159,7 +159,7 @@ static void XMLLoader_StartLoad(LCUI_XMLLoader loader)
 	ui_widget_empty(target);
 	task.arg[0] = loader;
 	task.func = (LCUI_TaskFunc)XMLLoader_Load;
-	LCUI_PostAsyncTask(&task);
+	lcui_post_async_task(&task, -1);
 }
 
 void Anchor_Open(ui_widget_t* w)
@@ -193,7 +193,7 @@ static void Anchor_OnClick(ui_widget_t* w, ui_event_t* e, void *arg)
 	LCUI_TaskRec task = { 0 };
 	task.func = (LCUI_TaskFunc)Anchor_Open;
 	task.arg[0] = w;
-	LCUI_PostAsyncTask(&task);
+	lcui_post_async_task(&task, -1);
 }
 
 static void Anchor_OnInit(ui_widget_t* w)

@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <app.h>
+#include <yutil.h>
 
 static struct app_events_t {
 	/** list_t<app_event_t> */
@@ -140,16 +141,14 @@ int app_poll_event(app_event_t *e)
 {
 	app_event_t *ev;
 
-	if (app_events.queue.length < 1) {
-		return 0;
-	}
-	ev = list_t_Get(&app_events.queue, 0);
+	ev = list_get(&app_events.queue, 0);
 	if (ev) {
 		*e = *ev;
-		list_t_Delete(&app_events.queue, 0);
+		list_delete(&app_events.queue, 0);
 		free(ev);
+		return 1;
 	}
-	return 1;
+	return 0;
 }
 
 void app_init_events(void)

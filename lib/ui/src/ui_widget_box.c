@@ -70,7 +70,7 @@ void ui_widget_update_box_position(ui_widget_t* w)
 float ui_widget_get_canvas_box_width(ui_widget_t* widget)
 {
 	float width;
-	const LCUI_BoxShadowStyle* shadow;
+	const pd_boxshadow_style_t* shadow;
 
 	width = widget->box.border.width;
 	shadow = &widget->computed_style.shadow;
@@ -85,7 +85,7 @@ float ui_widget_get_canvas_box_width(ui_widget_t* widget)
 float ui_widget_get_canvas_box_height(ui_widget_t* widget)
 {
 	float height;
-	const LCUI_BoxShadowStyle* shadow;
+	const pd_boxshadow_style_t* shadow;
 
 	height = widget->box.border.height;
 	shadow = &widget->computed_style.shadow;
@@ -137,7 +137,7 @@ void ui_widget_update_box_size(ui_widget_t* w)
 
 float ui_widget_get_box_shadow_offset_x(ui_widget_t* w)
 {
-	const LCUI_BoxShadowStyle* shadow;
+	const pd_boxshadow_style_t* shadow;
 
 	shadow = &w->computed_style.shadow;
 	if (shadow->x >= SHADOW_WIDTH(shadow)) {
@@ -148,7 +148,7 @@ float ui_widget_get_box_shadow_offset_x(ui_widget_t* w)
 
 float ui_widget_get_box_shadow_offset_y(ui_widget_t* w)
 {
-	const LCUI_BoxShadowStyle* shadow;
+	const pd_boxshadow_style_t* shadow;
 
 	shadow = &w->computed_style.shadow;
 	if (shadow->y >= SHADOW_WIDTH(shadow)) {
@@ -173,7 +173,7 @@ void ui_widget_compute_canvas_box_actual(ui_widget_t* w,
 					 ui_widget_actual_style_t* s)
 {
 	ui_widget_compute_box_shadow(w, &s->shadow);
-	BoxShadow_GetCanvasRect(&s->shadow, &s->border_box, &s->canvas_box);
+	pd_boxshadow_get_canvas_rect(&s->shadow, &s->border_box, &s->canvas_box);
 }
 
 void ui_widget_compute_padding_box_actual(ui_widget_t* w,

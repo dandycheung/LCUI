@@ -29,7 +29,7 @@ static void OnOpacityMinus(ui_widget_t* w, ui_event_t* e, void *arg)
 
 int main(void)
 {
-	ui_widget_t* btn_plus, btn_minus;
+	ui_widget_t *btn_plus, *btn_minus;
 
 	lcui_init();
 	build();

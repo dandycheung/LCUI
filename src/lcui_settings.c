@@ -27,10 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LCUI_Build.h>
-#include <LCUI/types.h>
-#include <LCUI/util.h>
-#include <LCUI/settings.h>
+#include <LCUI.h>
+#include <LCUI/app.h>
+#include <LCUI/ui.h>
+#include <LCUI/ui/server.h>
 
 static lcui_settings_t lcui_settings;
 
@@ -47,6 +47,9 @@ void lcui_apply_settings(lcui_settings_t *settings)
 	lcui_settings.frame_rate_cap = y_max(lcui_settings.frame_rate_cap, 1);
 	lcui_settings.parallel_rendering_threads =
 	    y_max(lcui_settings.parallel_rendering_threads, 1);
+	ui_server_set_threads(lcui_settings.parallel_rendering_threads);
+	ui_server_set_paint_flashing_enabled(lcui_settings.paint_flashing);
+	lcui_set_frame_rate_cap(lcui_settings.frame_rate_cap);
 }
 
 /* Reset global settings to their defaults. */

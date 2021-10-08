@@ -28,7 +28,8 @@
  */
 
 #include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI/types.h>
+#include <LCUI/util/task.h>
 
 void LCUITask_Destroy(LCUI_Task task)
 {

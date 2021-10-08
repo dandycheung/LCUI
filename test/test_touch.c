@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <LCUI.h>
-#include <LCUI/display.h>
 #include <LCUI/ui.h>
+#include <LCUI/graph.h>
 
 /** 触点绑定记录 */
 typedef struct TouchPointBindingRec_ {
@@ -94,6 +94,6 @@ int main(int argc, char **argv)
 {
 	lcui_init();
 	list_create(&touch_bindings);
-	LCUI_BindEvent(APP_EVENT_TOUCH, OnTouch, NULL, NULL);
+	app_on_event(APP_EVENT_TOUCH, OnTouch, NULL);
 	return lcui_main();
 }

@@ -3,6 +3,7 @@
  */
 
 #include <stdlib.h>
+#include <yutil.h>
 #include "app.h"
 
 void step_timer_init(step_timer_t *timer)

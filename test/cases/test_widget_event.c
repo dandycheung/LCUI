@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <LCUI.h>
-#include <LCUI/input.h>
 #include <LCUI/ui.h>
 #include "ctest.h"
 
 void test_widget_mouse_event(void)
 {
-	ui_widget_t* root;
-	ui_widget_t* parent, child;
+	ui_widget_t *root;
+	ui_widget_t *parent, *child;
 	app_event_t ev;
 
 	lcui_init();
@@ -23,11 +22,10 @@ void test_widget_mouse_event(void)
 	ui_update();
 
 	ev.type = APP_EVENT_MOUSEMOVE;
-	ev.motion.x = 150;
-	ev.motion.y = 150;
-	ev.motion.xrel = 0;
-	ev.motion.yrel = 0;
-	LCUI_TriggerEvent(&ev, NULL);
+	ev.mouse.x = 150;
+	ev.mouse.y = 150;
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mousemove(150, 150): root.hasStatus('hover') == true",
 	     ui_widget_has_status(root, "hover"), TRUE);
 	it_b("mousemove(150, 150): parent.hasStatus('hover') == false",
@@ -35,9 +33,10 @@ void test_widget_mouse_event(void)
 	it_b("mousemove(150, 150): child.hasStatus('hover') == false",
 	     ui_widget_has_status(child, "hover"), FALSE);
 
-	ev.motion.x = 80;
-	ev.motion.y = 80;
-	LCUI_TriggerEvent(&ev, NULL);
+	ev.mouse.x = 80;
+	ev.mouse.y = 80;
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mousemove(80, 80): root.hasStatus('hover') == true",
 	     ui_widget_has_status(root, "hover"), TRUE);
 	it_b("mousemove(80, 80): parent.hasStatus('hover') == true",
@@ -45,9 +44,10 @@ void test_widget_mouse_event(void)
 	it_b("mousemove(80, 80): child.hasStatus('hover') == false",
 	     ui_widget_has_status(child, "hover"), FALSE);
 
-	ev.motion.x = 40;
-	ev.motion.y = 40;
-	LCUI_TriggerEvent(&ev, NULL);
+	ev.mouse.x = 40;
+	ev.mouse.y = 40;
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mousemove(40, 40): root.hasStatus('hover') == true",
 	     ui_widget_has_status(root, "hover"), TRUE);
 	it_b("mousemove(40, 40): parent.hasStatus('hover') == true",
@@ -59,7 +59,8 @@ void test_widget_mouse_event(void)
 	ev.mouse.x = 40;
 	ev.mouse.y = 40;
 	ev.mouse.button = MOUSE_BUTTON_LEFT;
-	LCUI_TriggerEvent(&ev, NULL);
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mousedown(40, 40): root.hasStatus('active') == true",
 	     ui_widget_has_status(root, "active"), TRUE);
 	it_b("mousedown(40, 40): parent.hasStatus('active') == true",
@@ -68,7 +69,8 @@ void test_widget_mouse_event(void)
 	     ui_widget_has_status(child, "active"), TRUE);
 
 	ev.type = APP_EVENT_MOUSEUP;
-	LCUI_TriggerEvent(&ev, NULL);
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mouseup(40, 40): root.hasStatus('active') == false",
 	     ui_widget_has_status(root, "active"), FALSE);
 	it_b("mouseup(40, 40): parent.hasStatus('active') == false",
@@ -77,9 +79,10 @@ void test_widget_mouse_event(void)
 	     ui_widget_has_status(child, "active"), FALSE);
 
 	ev.type = APP_EVENT_MOUSEMOVE;
-	ev.motion.x = 80;
-	ev.motion.y = 80;
-	LCUI_TriggerEvent(&ev, NULL);
+	ev.mouse.x = 80;
+	ev.mouse.y = 80;
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mousemove(80, 80): root.hasStatus('hover') == true",
 	     ui_widget_has_status(root, "hover"), TRUE);
 	it_b("mousemove(80, 80): parent.hasStatus('hover') == true",
@@ -87,11 +90,10 @@ void test_widget_mouse_event(void)
 	it_b("mousemove(80, 80): child.hasStatus('hover') == false",
 	     ui_widget_has_status(child, "hover"), FALSE);
 
-	ev.motion.x = 150;
-	ev.motion.y = 150;
-	ev.motion.xrel = 0;
-	ev.motion.yrel = 0;
-	LCUI_TriggerEvent(&ev, NULL);
+	ev.mouse.x = 150;
+	ev.mouse.y = 150;
+	app_post_event(&ev);
+	lcui_process_events();
 	it_b("mousemove(150, 150): root.hasStatus('hover') == true",
 	     ui_widget_has_status(root, "hover"), TRUE);
 	it_b("mousemove(150, 150): parent.hasStatus('hover') == false",

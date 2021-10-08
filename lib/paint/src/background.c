@@ -29,12 +29,12 @@
  */
 
 #include <LCUI_Build.h>
-#include <LCUI/LCUI.h>
+#include <LCUI/types.h>
 #include <LCUI/graph.h>
+#include <LCUI/util.h>
 
-void pd_background_paint(const pd_background_t *bg,
-		      const pd_rect_t *box,
-		      pd_paint_context_t* paint)
+void pd_background_paint(const pd_background_t *bg, const pd_rect_t *box,
+			 pd_paint_context_t *paint)
 {
 	double scale;
 	pd_canvas_t canvas, buffer;

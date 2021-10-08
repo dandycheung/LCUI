@@ -1,6 +1,7 @@
 ﻿#include <errno.h>
 #include <Windows.h>
-#include <app.h>
+#include <LCUI/app.h>
+#include <LCUI/util.h>
 
 extern int main(int argc, char *argv[]);
 

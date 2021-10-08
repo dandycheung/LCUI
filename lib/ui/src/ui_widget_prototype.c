@@ -197,7 +197,7 @@ void ui_init_widget_prototype(void)
 	static dict_type_t type;
 
 	dict_init_string_key_type(&type);
-	type.valDestructor = ui_widget_prototype_dict_val_destructor;
+	type.val_destructor = ui_widget_prototype_dict_val_destructor;
 	ui_widget_prototype_dict = dict_create(&type, NULL);
 }
 

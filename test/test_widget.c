@@ -12,7 +12,7 @@ int main(void)
 	size_t i, n = 100000;
 	double sec;
 
-	ui_widget_t* box, w;
+	ui_widget_t *box, *w;
 
 	LCUI_InitFontLibrary();
 	ui_init();

@@ -1,12 +1,11 @@
-#include <LCUI.h>
-#include <LCUI/ui.h>
-#include <LCUI/gui/widget/textview.h>
-#include <LCUI/display.h>
-#include <LCUI/graph.h>
-#include <LCUI/timer.h>
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <LCUI.h>
+#include <LCUI/ui.h>
+#include <LCUI/graph.h>
+#include <LCUI/timer.h>
+#include <LCUI/gui/widget/textview.h>
 
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 900
@@ -139,22 +138,19 @@ int main(void)
 
 	logger_set_level(LOGGER_LEVEL_WARNING);
 	lcui_init();
-	LCUIDisplay_SetSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	ui_widget_resize(ui_root(), SCREEN_WIDTH, SCREEN_HEIGHT);
 	InitBackground();
 	InitModal();
 	InitRenderStatus();
 	printf("running rendering performance test\n");
-	LCUI_RunFrame();
 	t = get_time_ms();
 	self.color_index = 0;
 	for (i = 0; i < 600; ++i) {
 		UpdateFrame(self.box);
 		lcui_process_timers();
-		LCUI_ProcessEvents();
-		ui_update();
-		LCUIDisplay_Update();
-		LCUIDisplay_Render();
-		LCUIDisplay_Present();
+		lcui_update_ui();
+		lcui_render_ui();
+		app_present();
 		++self.fps;
 		++self.color_index;
 	}
