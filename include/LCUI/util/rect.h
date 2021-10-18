@@ -31,6 +31,9 @@
 #ifndef LCUI_UTIL_RECT_H
 #define LCUI_UTIL_RECT_H
 
+#include <LCUI/header.h>
+#include <LCUI/types.h>
+
 #define LCUIRect_IsIncludeRect(a, b)                                       \
 	((b)->x >= (a)->x && (b)->x + (b)->width <= (a)->x + (a)->width && \
 	 (b)->y >= (a)->y && (b)->y + (b)->height <= (a)->y + (a)->height)

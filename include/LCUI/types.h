@@ -30,6 +30,7 @@
 #ifndef LCUI_TYPES_H
 #define LCUI_TYPES_H
 
+#include <LCUI/header.h>
 #include <wchar.h>
 #include <stdint.h>
 
@@ -43,11 +44,6 @@
 
 #include <time.h>
 
-#define LCUI_MAX_FRAMES_PER_SEC 120
-#define LCUI_MAX_FRAME_MSEC ((int)(1000.0 / LCUI_MAX_FRAMES_PER_SEC + 0.5))
-#define ASSIGN(NAME, TYPE) TYPE NAME = (TYPE)malloc(sizeof(TYPE##Rec))
-#define ZEROSET(NAME, TYPE) memset(NAME, 0, sizeof(TYPE##Rec))
-#define NEW(TYPE, COUNT) (TYPE *)calloc(COUNT, sizeof(TYPE))
 #define CodeToString(...) "" #__VA_ARGS__ ""
 
 LCUI_BEGIN_HEADER

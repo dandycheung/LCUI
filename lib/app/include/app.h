@@ -1,18 +1,8 @@
 ﻿#ifndef LIBAPP_INCLUDE_APP_H
 #define LIBAPP_INCLUDE_APP_H
 
-#include <LCUI_Build.h>
+#include <LCUI/header.h>
 #include <LCUI/types.h>
-
-#ifdef _WIN32
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-#define APP_PLATFORM_UWP
-#else
-#define APP_PLATFORM_WIN_DESKTOP
-#endif
-#else
-#define APP_PLATFORM_LINUX
-#endif
 
 typedef pd_paint_context_t app_window_paint_t;
 

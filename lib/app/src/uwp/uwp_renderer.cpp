@@ -178,7 +178,7 @@ static int UWPDisplay_BindEvent(int event_id, LCUI_EventFunc func, void *data,
 
 static LCUI_Surface UWPSurface_Create(void)
 {
-	LCUI_Surface surface = NEW(LCUI_SurfaceRec, 1);
+	LCUI_Surface surface = malloc(sizeof(LCUI_SurfaceRec));
 	surface->is_updated = FALSE;
 	surface->display = &display;
 	display.surface = surface;

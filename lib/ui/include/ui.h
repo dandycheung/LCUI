@@ -2,7 +2,7 @@
 #define LIB_UI_H
 
 #include <yutil.h>
-#include <LCUI_Build.h>
+#include <LCUI/header.h>
 #include <LCUI/types.h>
 #include <LCUI/util/object.h>
 #include <LCUI/gui/css_library.h>

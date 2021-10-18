@@ -29,7 +29,7 @@
  */
 
 #include "config.h"
-#include <LCUI_Build.h>
+#include <LCUI/header.h>
 #ifdef LCUI_BUILD_IN_LINUX
 #include <stdio.h>
 #include <stdlib.h>

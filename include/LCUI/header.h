@@ -1,7 +1,7 @@
 ﻿/*
- * uri.c -- uri processing
+ * LCUI_Build.h -- Build-related configuration definitions
  *
- * Copyright (c) 2018, Liu chao <lc-soft@live.cn> All rights reserved.
+ * Copyright (c) 2019, Liu chao <lc-soft@live.cn> All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,27 +28,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <LCUI/header.h>
-#include <LCUI/util/uri.h>
+#ifndef LCUI_HEADER_H
+#define LCUI_HEADER_H
 
-#if defined(LCUI_PLATFORM_WIN32) && !defined(WINAPI_PARTITION_APP)
-#pragma warning(disable:4091)
-#include <Windows.h>
-#include <ShlObj.h>
-
-int OpenUri(const char *uri)
-{
-	ShellExecuteA(NULL, "open", uri, NULL, NULL, SW_SHOW);
-	return 0;
-}
-
+#if defined(__GNUC__)
+	#define LCUI_API extern __attribute__((visibility("default")))
 #else
+	#ifdef LCUI_EXPORTS
+		#define LCUI_API __declspec(dllexport)
+	#else
+		#define LCUI_API __declspec(dllimport)
+	#endif
+#endif
 
-int OpenUri(const char *uri)
-{
-	return -1;
-}
+#if defined(_WIN32) && !defined(__cplusplus)
+	#define INLINE __inline
+#else
+	#define INLINE static inline
+#endif
+
+#ifdef _WIN32
+	#define LCUI_PLATFORM_WIN32
+	#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+	#define LCUI_PLATFORM_UWP
+	#else
+	#define LCUI_PLATFORM_WIN_DESKTOP
+	#endif
+#else
+	#define LCUI_PLATFORM_LINUX
+#endif
+
+#ifdef DEBUG
+#define DEBUG_MSG _DEBUG_MSG
+#else
+#define DEBUG_MSG(format, ...)
+#endif
+
+#define _DEBUG_MSG(format, ...)                                       \
+	logger_log(LOGGER_LEVEL_DEBUG, __FILE__ " %d: %s(): " format, \
+		   __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
+#ifdef __cplusplus
+#define LCUI_BEGIN_HEADER extern "C" {
+#define LCUI_END_HEADER }
+#else
+#define LCUI_BEGIN_HEADER /* nothing */
+#define LCUI_END_HEADER
+#endif
+
 #endif

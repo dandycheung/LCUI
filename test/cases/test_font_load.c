@@ -129,7 +129,7 @@ void test_font_load(void)
 	/* 测试是否能够从字体文件中载入字体 */
 	it_i("check LCUIFont_LoadFile success",
 	     LCUIFont_LoadFile("test_font_load.ttf"), 0);
-#ifdef LCUI_BUILD_IN_WIN32
+#ifdef LCUI_PLATFORM_WIN32
 	describe("test segoe ui font load", test_segoe_ui_font_load);
 	describe("test arial font load", test_arial_font_load);
 #endif

@@ -51,13 +51,14 @@ int ime_add(const char *name, ime_handler_t *handler)
 {
 	size_t len;
 	ime_t *ime;
+
 	if (!app_ime.active) {
 		return -1;
 	}
 	if (ime_get_by_name(name)) {
 		return -2;
 	}
-	ime = NEW(ime_t, 1);
+	ime = malloc(sizeof(ime_t));
 	if (!ime) {
 		return -ENOMEM;
 	}
@@ -222,10 +223,10 @@ void app_init_ime(void)
 	list_create(&app_ime.list);
 	app_ime.active = TRUE;
 	app_on_event(APP_EVENT_KEYDOWN, ime_on_keydown, NULL);
-#ifdef APP_PLATFORM_UWP
+#ifdef LCUI_PLATFORM_UWP
 	return;
 #else
-#ifdef APP_PLATFORM_WIN_DESKTOP
+#ifdef LCUI_PLATFORM_WIN_DESKTOP
 	ime_select(ime_add_win32());
 #else
 	ime_select(ime_add_linux());

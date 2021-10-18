@@ -1133,7 +1133,9 @@ void CSSParser_EndBuffer(LCUI_CSSParserContext ctx)
 
 LCUI_CSSParserContext CSSParser_Begin(size_t buffer_size, const char *space)
 {
-	ASSIGN(ctx, LCUI_CSSParserContext);
+	LCUI_CSSParserContext ctx;
+
+	ctx = malloc(sizeof(LCUI_CSSParserContextRec));
 	if (space) {
 		ctx->space = strdup2(space);
 		ctx->style.dirname = getdirname(ctx->space);
@@ -1141,7 +1143,7 @@ LCUI_CSSParserContext CSSParser_Begin(size_t buffer_size, const char *space)
 		ctx->space = NULL;
 		ctx->style.dirname = NULL;
 	}
-	ctx->buffer = NEW(char, buffer_size);
+	ctx->buffer = malloc(sizeof(char) * buffer_size);
 	ctx->buffer_size = buffer_size;
 	ctx->target = CSS_TARGET_NONE;
 	ctx->style.space = ctx->space;
@@ -1190,7 +1192,7 @@ int LCUI_AddCSSPropertyParser(LCUI_CSSPropertyParser sp)
 		return -2;
 	}
 	self.count += 1;
-	new_sp = NEW(LCUI_CSSPropertyParserRec, 1);
+	new_sp = malloc(sizeof(LCUI_CSSPropertyParserRec));
 	new_sp->key = sp->key;
 	new_sp->parse = sp->parse;
 	new_sp->name = strdup2(sp->name);

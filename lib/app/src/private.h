@@ -1,13 +1,13 @@
 #include "config.h"
 #include <app.h>
 
-#ifdef APP_PLATFORM_WIN_DESKTOP
+#ifdef LCUI_PLATFORM_WIN_DESKTOP
 
 int ime_add_win32(void);
 
 #endif
 
-#ifdef APP_PLATFORM_LINUX
+#ifdef LCUI_PLATFORM_LINUX
 
 void fb_app_driver_init(app_driver_t *dirver);
 void fb_app_window_driver_init(app_window_driver_t *driver);

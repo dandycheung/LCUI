@@ -102,7 +102,8 @@ ui_widget_t* SideBar_AppendItem(ui_widget_t* sidebar, const wchar_t *id,
 	SideBarItem sbi;
 	ui_widget_t* w;
 	size_t len = id ? wcslen(id) + 1 : 0;
-	wchar_t *newid = NEW(wchar_t, len);
+	wchar_t *newid = malloc(sizeof(wchar_t) * len);
+
 	if (!newid) {
 		return NULL;
 	}

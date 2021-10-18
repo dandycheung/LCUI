@@ -23,7 +23,7 @@ static struct lcui_app_t {
 	int worker_next;
 } lcui_app;
 
-#ifdef APP_PLATFORM_WIN_DESKTOP
+#ifdef LCUI_PLATFORM_WIN_DESKTOP
 
 static void win32_logger_log_a(const char *str)
 {
@@ -191,7 +191,7 @@ int lcui_process_events(void)
 
 void lcui_init_base(void)
 {
-#ifdef APP_PLATFORM_WIN_DESKTOP
+#ifdef LCUI_PLATFORM_WIN_DESKTOP
 	logger_set_handler(win32_logger_log_a);
 	logger_set_handler_w(win32_logger_log_w);
 #endif

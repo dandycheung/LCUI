@@ -226,7 +226,7 @@ static int TextEdit_AddTextBlock(ui_widget_t* widget, const wchar_t *wtext,
 	len = wcslen(wtext);
 	edit = ui_widget_get_data(widget, self.prototype);
 	for (i = 0; i < len; ++i) {
-		block = NEW(LCUI_TextBlockRec, 1);
+		block = malloc(sizeof(LCUI_TextBlockRec));
 		if (!block) {
 			return -ENOMEM;
 		}
@@ -241,7 +241,7 @@ static int TextEdit_AddTextBlock(ui_widget_t* widget, const wchar_t *wtext,
 			size = len - i;
 			block->type = TEXT_BLOCK_END;
 		}
-		block->text = NEW(wchar_t, size);
+		block->text = malloc(sizeof(wchar_t) * size);
 		if (!block->text) {
 			return -ENOMEM;
 		}
@@ -324,7 +324,7 @@ static void TextEdit_ProcTextBlock(ui_widget_t* widget, LCUI_TextBlock txtblk)
 		break;
 	}
 	if (edit->password_char && txtblk->owner == TEXT_BLOCK_OWNER_SOURCE) {
-		wchar_t *text = NEW(wchar_t, txtblk->length + 1);
+		wchar_t *text = malloc(sizeof(wchar_t) * txtblk->length + 1);
 		wcsncpy(text, txtblk->text, txtblk->length + 1);
 		fillchar(text, edit->password_char);
 		layer = edit->layer_mask;

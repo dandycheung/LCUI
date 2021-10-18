@@ -1,6 +1,6 @@
 #include "../private.h"
 
-#ifdef APP_PLATFORM_LINUX
+#ifdef LCUI_PLATFORM_LINUX
 
 static struct app_t {
 	app_window_driver_t window;

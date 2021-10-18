@@ -2,7 +2,8 @@
 #ifndef LCUI_TIMER_H
 #define LCUI_TIMER_H
 
-#include <LCUI_Build.h>
+#include <LCUI/header.h>
+#include <stddef.h>
 
 LCUI_BEGIN_HEADER
 

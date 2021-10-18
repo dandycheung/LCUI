@@ -150,9 +150,10 @@ static void CanvasContext_Release(LCUI_CanvasContext ctx)
 
 LCUI_CanvasContext Canvas_GetContext(ui_widget_t* w)
 {
-	ASSIGN(ctx, LCUI_CanvasRenderingContext);
+	LCUI_CanvasRenderingContext ctx;
 	Canvas canvas = ui_widget_get_data(w, self.proto);
 
+	ctx = malloc(sizeof(LCUI_CanvasRenderingContextRec));
 	ctx->canvas = w;
 	ctx->available = TRUE;
 	ctx->buffer = canvas->buffer;

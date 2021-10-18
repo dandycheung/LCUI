@@ -448,7 +448,7 @@ int RectList_AddEx(list_t *list, pd_rect_t *rect, LCUI_BOOL auto_merge)
 			return RectList_Add(list, &union_rect);
 		}
 	}
-	p = NEW(pd_rect_t, 1);
+	p = malloc(sizeof(pd_rect_t));
 	*p = *rect;
 	list_append(list, p);
 	return 0;

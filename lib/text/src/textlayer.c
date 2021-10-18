@@ -30,7 +30,7 @@
 
 #include <stdlib.h>
 #include <wctype.h>
-#include <LCUI_Build.h>
+#include <LCUI/header.h>
 #include <LCUI/types.h>
 #include <yutil.h>
 #include <LCUI/util/rect.h>

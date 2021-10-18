@@ -1,6 +1,6 @@
 #include "../private.h"
 
-#ifdef APP_PLATFORM_LINUX
+#ifdef LCUI_PLATFORM_LINUX
 
 #include <errno.h>
 #include <fcntl.h>

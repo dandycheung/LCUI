@@ -1,7 +1,7 @@
 #include <LCUI/app.h>
 #include <LCUI/util.h>
 
-#ifdef APP_PLATFORM_WIN_DESKTOP
+#ifdef LCUI_PLATFORM_WIN_DESKTOP
 #pragma comment(lib, "User32")
 #pragma comment(lib, "Gdi32")
 #include <windows.h>

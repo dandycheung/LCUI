@@ -1,9 +1,8 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
-#include <LCUI.h>
 #include <LCUI/thread.h>
 #include <LCUI/timer.h>
-#include <yutil.h>
+#include <LCUI/util.h>
 
 static struct lcui_timers_t {
 	timer_list_t *list;

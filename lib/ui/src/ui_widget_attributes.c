@@ -36,7 +36,7 @@ int ui_widget_set_attribute_ex(ui_widget_t* w, const char *name, void *value,
 			attr->value.destructor(attr->value.data);
 		}
 	} else {
-		attr = NEW(ui_widget_attribute_t, 1);
+		attr = malloc(sizeof(ui_widget_attribute_t));
 		attr->name = strdup2(name);
 		dict_add(w->attributes, attr->name, attr);
 	}

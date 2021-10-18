@@ -32,6 +32,8 @@
 #ifndef LCUI_UTIL_STEPTIMER_H
 #define LCUI_UTIL_STEPTIMER_H
 
+#include <LCUI/header.h>
+
 LCUI_BEGIN_HEADER
 
 #ifdef LCUI_UTIL_STEPTIMER_C

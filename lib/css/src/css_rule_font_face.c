@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <LCUI_Build.h>
+#include <LCUI/header.h>
 #include <LCUI/types.h>
 #include <LCUI/util/parse.h>
 #include <yutil.h>
@@ -284,11 +284,11 @@ int CSSParser_InitFontFaceRuleParser(LCUI_CSSParserContext ctx)
 	FontFaceParserContext data;
 
 	parser = &ctx->rule.parsers[CSS_RULE_FONT_FACE];
-	data = NEW(FontFaceParserContextRec, 1);
+	data = malloc(sizeof(FontFaceParserContextRec));
 	if (!data) {
 		return -ENOMEM;
 	}
-	data->face = NEW(LCUI_CSSFontFaceRec, 1);
+	data->face = malloc(sizeof(LCUI_CSSFontFaceRec));
 	if (!data->face) {
 		free(data);
 		return -ENOMEM;

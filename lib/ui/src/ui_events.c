@@ -267,14 +267,14 @@ static int ui_add_touch_capturer(list_t* list, ui_widget_t *w, int point_id)
 	}
 	/* 如果没有该部件的触点捕捉记录 */
 	if (!tc || tc->widget != w) {
-		tc = NEW(ui_touch_capturer_t, 1);
+		tc = malloc(sizeof(ui_touch_capturer_t));
 		tc->widget = w;
 		tc->node.data = tc;
 		list_create(&tc->points);
 		list_append_node(list, &tc->node);
 	}
 	/* 追加触点捕捉记录 */
-	data = NEW(int, 1);
+	data = malloc(sizeof(int));
 	*data = point_id;
 	list_append(&tc->points, data);
 	return 0;

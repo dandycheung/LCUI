@@ -73,7 +73,7 @@ ui_widget_prototype_t *ui_create_widget_prototype(const char *name,
 	if (dict_fetch_value(ui_widget_prototype_dict, name)) {
 		return NULL;
 	}
-	proto = NEW(ui_widget_prototype_t, 1);
+	proto = malloc(sizeof(ui_widget_prototype_t));
 	if (parent_name) {
 		parent = dict_fetch_value(ui_widget_prototype_dict, parent_name);
 		if (parent) {

@@ -73,7 +73,7 @@ static void OnTouch(app_event_t *e, void *arg)
 		}
 		w = ui_create_widget(NULL);
 		/* 新建绑定记录 */
-		binding = NEW(TouchPointBindingRec, 1);
+		binding = malloc(sizeof(TouchPointBindingRec));
 		binding->point_id = point->id;
 		binding->node.data = binding;
 		binding->is_valid = TRUE;

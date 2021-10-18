@@ -1,6 +1,6 @@
 #include "../private.h"
 
-#if defined(APP_PLATFORM_LINUX) && defined(USE_LIBX11)
+#if defined(LCUI_PLATFORM_LINUX) && defined(USE_LIBX11)
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

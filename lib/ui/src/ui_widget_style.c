@@ -455,9 +455,10 @@ void ui_widget_compute_flex_style(ui_widget_t* w)
 LCUI_SelectorNode ui_widget_create_selector_node(ui_widget_t* w)
 {
 	int i;
-	ASSIGN(sn, LCUI_SelectorNode);
-	ZEROSET(sn, LCUI_SelectorNode);
+	LCUI_SelectorNode sn;
 
+	sn = malloc(sizeof(LCUI_SelectorNodeRec));
+	memset(sn, 0, sizeof(LCUI_SelectorNodeRec));
 	if (w->id) {
 		sn->id = strdup2(w->id);
 	}

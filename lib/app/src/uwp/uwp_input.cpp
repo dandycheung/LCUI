@@ -54,7 +54,7 @@ static touch_point_t *AddTouchPoint(list_t *points,
 		tp = NULL;
 	}
 	if (!tp) {
-		tp = NEW(touch_point_t, 1);
+		tp = malloc(sizeof(touch_point_t));
 		tp->id = point->PointerId;
 		/* 将第一个触点作为主触点 */
 		tp->is_primary = points->length == 0;
@@ -87,7 +87,7 @@ static int CreateTouchEvent(app_event_t *e, list_t *points)
 	list_node_t *node;
 	touch_point_t *list;
 
-	list = NEW(touch_point_t, points->length);
+	list = malloc(sizeof(touch_point_t, points->length);
 	for (list_each(node, points)) {
 		list[i++] = *(LCUI_TouchPoint)node->data;
 	}
