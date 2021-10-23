@@ -1,6 +1,6 @@
 ﻿#include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 #define ARRAY_LEN(ARR) sizeof(ARR) / sizeof(ARR[0])
 

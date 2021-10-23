@@ -1,6 +1,6 @@
 #include <errno.h>
-#include <app.h>
-#include <yutil.h>
+#include <LCUI/util.h>
+#include <LCUI/platform.h>
 
 static struct app_events_t {
 	/** list_t<app_event_t> */

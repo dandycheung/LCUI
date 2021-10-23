@@ -4,7 +4,7 @@
 #include <LCUI/header.h>
 #include <LCUI/types.h>
 #include <LCUI/util.h>
-#include <LCUI/app.h>
+#include <LCUI/platform.h>
 
 #define LCUI_MAX_FRAMES_PER_SEC 120
 #define LCUI_MAX_FRAME_MSEC ((int)(1000.0 / LCUI_MAX_FRAMES_PER_SEC + 0.5))

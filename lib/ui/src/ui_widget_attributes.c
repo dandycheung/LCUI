@@ -1,6 +1,6 @@
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static void ui_widget_attribute_destructor(void *privdata, void *data)
 {

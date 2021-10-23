@@ -1,7 +1,7 @@
 ﻿#include <assert.h>
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 void ui_widget_set_padding(ui_widget_t* w, float top, float right, float bottom,
 		       float left)

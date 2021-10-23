@@ -1,7 +1,7 @@
 ﻿
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 typedef struct ui_block_layout_row_t {
 	float width;

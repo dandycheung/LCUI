@@ -1,7 +1,7 @@
 
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 typedef struct ui_flexbox_line_t {
 	/** The size of it on the main axis */

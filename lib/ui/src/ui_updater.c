@@ -1,6 +1,6 @@
 ﻿#include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 typedef struct ui_updater_profile_t ui_updater_profile_t;
 struct ui_updater_profile_t {

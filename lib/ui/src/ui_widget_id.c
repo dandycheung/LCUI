@@ -2,7 +2,7 @@
 #include <LCUI.h>
 #include <LCUI/thread.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static dict_t* ui_widget_id_dict;
 static LCUI_Mutex ui_widget_id_dict_mutex;

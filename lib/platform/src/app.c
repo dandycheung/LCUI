@@ -1,4 +1,4 @@
-#include <app.h>
+#include "platform.h"
 
 int app_init(const wchar_t *name)
 {

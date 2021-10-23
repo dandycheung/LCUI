@@ -3,7 +3,7 @@
 #include <LCUI/draw.h>
 #include <LCUI/gui/css_library.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static float compute_metric_x(ui_widget_t* w, LCUI_Style s)
 {

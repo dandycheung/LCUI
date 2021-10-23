@@ -1,7 +1,7 @@
 ﻿#include <assert.h>
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 #define TYPE_CHILD_LIST UI_MUTATION_RECORD_TYPE_CHILD_LIST
 

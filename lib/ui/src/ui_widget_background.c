@@ -2,7 +2,7 @@
 #include <LCUI/graph.h>
 #include <LCUI/gui/css_library.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 void ui_widget_init_background(ui_widget_t *w)
 {

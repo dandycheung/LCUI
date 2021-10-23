@@ -1,6 +1,6 @@
 ﻿#include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static void ui_widget_refresh_children_by_status(ui_widget_t* w)
 {

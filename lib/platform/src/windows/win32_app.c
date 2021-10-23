@@ -1,4 +1,4 @@
-#include <LCUI/app.h>
+#include <LCUI/platform.h>
 #include <LCUI/util.h>
 
 #ifdef LCUI_PLATFORM_WIN_DESKTOP

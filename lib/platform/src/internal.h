@@ -1,5 +1,5 @@
 #include "config.h"
-#include <app.h>
+#include "platform.h"
 
 #ifdef LCUI_PLATFORM_WIN_DESKTOP
 

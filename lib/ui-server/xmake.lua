@@ -12,4 +12,4 @@ target("lcui-ui-server")
     if has_package("libomp") and has_config("enable-openmp") then
         set_configvar("ENABLE_OPENMP", 1)
     end
-    add_deps("lcui-util", "lcui-ui", "lcui-ui-cursor", "lcui-app")
+    add_deps("lcui-util", "lcui-ui", "lcui-ui-cursor", "lcui-platform")

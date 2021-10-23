@@ -3,7 +3,7 @@
 #include <LCUI/font.h>
 #include <LCUI/gui/css_fontstyle.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 const char *ui_default_css = CodeToString(
 

@@ -2,7 +2,7 @@
 #include <LCUI/graph.h>
 #include <LCUI/gui/css_library.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 #define compute_actual(X) ui_compute_actual(X, LCUI_STYPE_PX)
 

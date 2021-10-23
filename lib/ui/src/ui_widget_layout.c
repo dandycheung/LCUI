@@ -1,7 +1,7 @@
 ﻿
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 void ui_widget_reflow(ui_widget_t* w, ui_layout_rule_t rule)
 {

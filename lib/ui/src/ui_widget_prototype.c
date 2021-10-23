@@ -2,7 +2,7 @@
 
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static dict_t *ui_widget_prototype_dict;
 

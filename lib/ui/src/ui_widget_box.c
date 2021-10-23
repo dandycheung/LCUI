@@ -1,7 +1,7 @@
 #include <LCUI.h>
 #include <LCUI/graph.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 void ui_widget_update_box_position(ui_widget_t* w)
 {

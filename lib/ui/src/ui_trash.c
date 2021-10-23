@@ -1,6 +1,6 @@
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static list_t ui_trash = { 0 };
 

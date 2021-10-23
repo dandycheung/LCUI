@@ -28,7 +28,7 @@
  */
 
 #include <LCUI.h>
-#include <LCUI/app.h>
+#include <LCUI/platform.h>
 #include <LCUI/ui.h>
 #include <LCUI/ui/server.h>
 

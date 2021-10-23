@@ -1,7 +1,7 @@
 ﻿#include <LCUI.h>
 #include <LCUI/graph.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 //#define DEBUG_FRAME_RENDER
 #define MAX_VISIBLE_WIDTH 20000

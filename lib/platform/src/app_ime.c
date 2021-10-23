@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <yutil.h>
-#include "app.h"
-#include "private.h"
+#include "platform.h"
+#include "internal.h"
 
 typedef struct ime_t_ {
 	int id;

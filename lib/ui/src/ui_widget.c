@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <LCUI.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 static void ui_widget_destroy_children(ui_widget_t* w);
 

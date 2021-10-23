@@ -2,7 +2,7 @@
 #include <LCUI.h>
 #include <LCUI/thread.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 /* clang-format off */
 

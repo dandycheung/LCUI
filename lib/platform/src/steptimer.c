@@ -3,8 +3,8 @@
  */
 
 #include <stdlib.h>
-#include <yutil.h>
-#include "app.h"
+#include <LCUI/util.h>
+#include "platform.h"
 
 void step_timer_init(step_timer_t *timer)
 {

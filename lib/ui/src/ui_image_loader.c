@@ -4,7 +4,7 @@
 #include <LCUI/image.h>
 #include <LCUI/worker.h>
 #include "../include/ui.h"
-#include "private.h"
+#include "internal.h"
 
 typedef struct ui_image_event_listener_t {
 	list_node_t node;

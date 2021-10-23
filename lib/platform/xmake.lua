@@ -15,7 +15,7 @@ if has_config("with-libx11") then
     add_requires("libx11", {optional = true})
 end
 
-target("lcui-uwp")
+target("lcui-platform-uwp")
     if is_plat("windows") and has_config("uwp") then
         set_default(true)
     else
@@ -29,7 +29,7 @@ target("lcui-uwp")
     set_pcxxheader("src/uwp/pch.h")
     add_files("src/uwp/**.cpp")
 
-target("lcui-windows")
+target("lcui-platform-windows")
     if is_plat("windows") and not has_config("uwp") then
         set_default(true)
     else
@@ -39,7 +39,7 @@ target("lcui-windows")
     add_files("src/windows/*.c")
     add_links("Shell32")
 
-target("lcui-linux")
+target("lcui-platform-linux")
     if is_plat("linux") then
         set_default(true)
     else
@@ -52,7 +52,7 @@ target("lcui-linux")
     set_kind("static")
     add_files("src/linux/*.c")
 
-target("lcui-app")
+target("lcui-platform")
     set_kind("static")
     add_files("src/*.c")
     if is_plat("windows") then
@@ -60,9 +60,9 @@ target("lcui-app")
         if has_config("uwp") then
             add_deps("lcui-uwp")
         else
-            add_deps("lcui-windows")
+            add_deps("lcui-platform-windows")
         end
     else
-        add_deps("lcui-linux")
+        add_deps("lcui-platform-linux")
     end
     add_deps("lcui-thread")
