@@ -583,12 +583,6 @@ LCUI_API void ui_trash_add(ui_widget_t* w);
 /** 转换成单位为 px 的度量值 */
 LCUI_API float ui_compute(float value, LCUI_StyleType type);
 
-/** 将矩形中的度量值的单位转换为 px */
-LCUI_API void ui_compute_rect_actual(pd_rect_t* dst, const pd_rectf_t* src);
-
-/** 转换成单位为 px 的实际度量值 */
-LCUI_API int ui_compute_actual(float value, LCUI_StyleType type);
-
 /** 设置密度 */
 LCUI_API void ui_set_density(float density);
 
@@ -922,7 +916,7 @@ LCUI_API int ui_widget_add_mutation_recrod(ui_widget_t* widget,
 // Events
 
 /** 设置阻止部件及其子级部件的事件 */
-INLINE ui_widget_block_event(ui_widget_t* w, LCUI_BOOL block)
+INLINE void ui_widget_block_event(ui_widget_t* w, LCUI_BOOL block)
 {
 	w->event_blocked = block;
 }

@@ -27,7 +27,7 @@ void ui_widget_destroy_background(ui_widget_t *w)
 }
 
 static void ui_widget_on_background_image_load(ui_image_t *image,
-					       ui_widget_t *w)
+					       void *w)
 {
 	ui_widget_mark_dirty_rect(w, NULL, SV_BORDER_BOX);
 }

@@ -1,6 +1,6 @@
 
-
-#include <LCUI.h>
+#include <string.h>
+#include <LCUI/util.h>
 #include "../include/ui.h"
 #include "internal.h"
 

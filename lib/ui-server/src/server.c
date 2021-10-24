@@ -1,12 +1,12 @@
 // TODO: Reduce dependence on lcui header files
 
 #include <string.h>
-#include <LCUI.h>
+#include <errno.h>
+#include <LCUI/util.h>
 #include <LCUI/graph.h>
-#include <ui/cursor.h>
-#include <ui/server.h>
-
+#include <LCUI/ui/cursor.h>
 #include "config.h"
+#include "../include/server.h"
 
 #ifdef ENABLE_OPENMP
 #include <omp.h>
@@ -62,8 +62,10 @@ INLINE int is_rect_equals(const pd_rect_t *a, const pd_rect_t *b)
 	       a->height == b->height;
 }
 
-static void ui_connection_destroy(ui_connection_t *conn)
+static void ui_connection_destroy(void *arg)
 {
+	ui_connection_t *conn = arg;
+
 	app_window_close(conn->window);
 	list_destroy(&conn->flash_rects, free);
 	free(conn);
@@ -397,7 +399,7 @@ static size_t ui_server_render_window(ui_connection_t *conn)
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for \
 	default(none) \
-	shared(display, rects, rect_array) \
+	shared(ui_server, rects, rect_array) \
 	firstprivate(conn) \
 	reduction(+:count)
 #endif
@@ -560,6 +562,7 @@ void ui_server_init(void)
 	app_on_event(APP_EVENT_SIZE, ui_server_on_window_resize, NULL);
 	app_on_event(APP_EVENT_CLOSE, ui_server_on_window_close, NULL);
 	app_on_event(APP_EVENT_PAINT, ui_server_on_window_paint, NULL);
+	list_create(&ui_server.connections);
 	switch (app_get_id()) {
 	case APP_ID_LINUX_X11:
 	case APP_ID_UWP:
@@ -586,4 +589,5 @@ void ui_server_destroy(void)
 	app_off_event(APP_EVENT_MINMAXINFO, ui_server_on_window_minmaxinfo);
 	app_off_event(APP_EVENT_SIZE, ui_server_on_window_resize);
 	app_off_event(APP_EVENT_CLOSE, ui_server_on_window_close);
+	list_destroy(&ui_server.connections, ui_connection_destroy);
 }

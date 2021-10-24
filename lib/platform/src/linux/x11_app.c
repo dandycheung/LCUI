@@ -1,11 +1,14 @@
-#include "../private.h"
+#include "../internal.h"
 
 #if defined(LCUI_PLATFORM_LINUX) && defined(USE_LIBX11)
+
+#define MOUSE_WHEEL_DELTA 20
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
+#include <LCUI/graph.h>
 
 struct app_window_t {
 	Window handle;
@@ -15,6 +18,7 @@ struct app_window_t {
 
 	GC gc;
 	XImage *ximage;
+	pd_canvas_t fb;
 
 	/** list_t<pd_rect_t> */
 	list_t rects;
@@ -35,6 +39,9 @@ static struct x11_app_t {
 	/** list_t<app_window_t> */
 	list_t windows;
 } x11_app;
+
+static void x11_app_window_show(app_window_t *wnd);
+static void x11_app_window_set_size(app_window_t *wnd, int width, int height);
 
 static int convert_keycode(KeySym keysym)
 {
@@ -104,19 +111,35 @@ static int convert_keycode(KeySym keysym)
 	return keysym;
 }
 
-static LCUI_BOOL x11_app_process_event(XEvent *xe)
+static app_window_t *x11_app_get_window_by_handle(void *handle)
+{
+	list_node_t *node;
+
+	for (list_each(node, &x11_app.windows)) {
+		if (((app_window_t *)node->data)->handle == handle) {
+			return node->data;
+		}
+	}
+	return NULL;
+}
+
+static LCUI_BOOL x11_app_process_native_event(void)
 {
 	KeySym keysym;
-	XDisplay *dsp = x11_app.display;
+	Display *dsp = x11_app.display;
+	XEvent xe = { 0 };
 
-	app_event_t e = { 0 };
+	list_node_t *node;
 	app_window_t *wnd;
+	app_native_event_listener_t *listener;
+	app_event_t e = { 0 };
 
+	XNextEvent(x11_app.display, &xe);
 	switch (xe.type) {
 	case ConfigureNotify:
 		e.type = APP_EVENT_SIZE;
 		e.window = x11_app_get_window_by_handle(xe.xconfigure.window);
-		x11_app_window_resize(e.window, xe.xconfigure.width,
+		x11_app_window_set_size(e.window, xe.xconfigure.width,
 				      xe.xconfigure.height);
 		break;
 	case Expose:
@@ -126,7 +149,7 @@ static LCUI_BOOL x11_app_process_event(XEvent *xe)
 		e.paint.rect.y = xe.xexpose.y;
 		e.paint.rect.width = xe.xexpose.width;
 		e.paint.rect.height = xe.xexpose.height;
-		app_process_event(&e);
+		app_post_event(&e);
 		break;
 	case KeyPress:
 	case KeyRelease:
@@ -135,16 +158,16 @@ static LCUI_BOOL x11_app_process_event(XEvent *xe)
 		XAutoRepeatOn(dsp);
 		keysym = XkbKeycodeToKeysym(dsp, xe.xkey.keycode, 0, 1);
 		e.key.code = convert_keycode(keysym);
-		e.key.shift_key = x_xe.xkey.state & ShiftMask ? TRUE : FALSE;
-		e.key.ctrl_key = x_xe.xkey.state & ControlMask ? TRUE : FALSE;
-		app_process_event(&e);
+		e.key.shift_key = xe.xkey.state & ShiftMask ? TRUE : FALSE;
+		e.key.ctrl_key = xe.xkey.state & ControlMask ? TRUE : FALSE;
+		app_post_event(&e);
 		if (keysym >= XK_space && keysym <= XK_asciitilde &&
 		    e.type == APP_EVENT_KEYDOWN) {
 			e.type = APP_EVENT_KEYPRESS;
 			e.key.code = XkbKeycodeToKeysym(
 			    dsp, xe.xkey.keycode, 0,
-			    xe.xkey.state & ShiftMask ? 1 : 0)
-			    app_process_event(&e);
+			    xe.xkey.state & ShiftMask ? 1 : 0);
+			app_post_event(&e);
 		}
 		break;
 	case MotionNotify:
@@ -166,17 +189,17 @@ static LCUI_BOOL x11_app_process_event(XEvent *xe)
 			e.mouse.y = xe.xbutton.y;
 			e.mouse.button = xe.xbutton.button;
 		}
-		app_process_event(&e);
+		app_post_event(&e);
 		break;
 	case ButtonRelease:
 		e.type = APP_EVENT_MOUSEUP;
 		e.mouse.x = xe.xbutton.x;
 		e.mouse.y = xe.xbutton.y;
 		e.mouse.button = xe.xbutton.button;
-		app_process_event(&e);
+		app_post_event(&e);
 		break;
 	case ClientMessage:
-		if (e.xclient.data.l[0] == x11_app.wm_delete) {
+		if (xe.xclient.data.l[0] == x11_app.wm_delete) {
 			// TODO
 		}
 		break;
@@ -184,50 +207,25 @@ static LCUI_BOOL x11_app_process_event(XEvent *xe)
 		break;
 	}
 	app_event_destroy(&e);
+	for (list_each(node, &x11_app.native_listeners)) {
+		listener = node->data;
+		if (listener->type == xe.type) {
+			listener->handler(&xe, listener->data);
+		}
+	}
 	return TRUE;
 }
 
-static void x11_app_wait_event(void)
+static void x11_app_process_native_events(void)
 {
-	int fd;
-	fd_set fdset;
-	struct timeval tv;
-	XFlush(x11_app.display);
-	fd = ConnectionNumber(x11_app.display);
-	if (XEventsQueued(x11_app.display, QueuedAlready)) {
-		return TRUE;
-	}
-	FD_ZERO(&fdset);
-	FD_SET(fd, &fdset);
-	tv.tv_sec = 0;
-	tv.tv_usec = 10000;
-	if (select(fd + 1, &fdset, NULL, NULL, &tv) == 1) {
-		return XPending(x11_app.display);
-	}
-	return FALSE;
-}
-
-static void x11_app_process_native_event(void)
-{
-	MSG msg;
-	list_node_t *node;
-	app_native_event_listener_t *listener;
-
 	while (XEventsQueued(x11_app.display, QueuedAlready)) {
-		XNextEvent(x11_app.display, &xe);
-		x11_app_process_event(&xe);
-		for (list_each(node, &x11_app.native_listeners)) {
-			listener = node->data;
-			if (listener->type == msg.message) {
-				listener->handler(&ex, listener->data);
-			}
-		}
+		x11_app_process_native_event();
 	}
 }
 
-static int app_add_native_event_listener(int event_type,
-					 app_event_handler_t handler,
-					 void *data)
+static int x11_app_add_native_event_listener(int type,
+					     app_event_handler_t handler,
+					     void *data)
 {
 	app_native_event_listener_t *listener;
 
@@ -237,13 +235,13 @@ static int app_add_native_event_listener(int event_type,
 	}
 	listener->handler = handler;
 	listener->data = data;
-	listener->type = event_type;
+	listener->type = type;
 	list_append(&x11_app.native_listeners, listener);
 	return 0;
 }
 
-static int app_remove_native_event_listener(int event_type,
-					    app_event_handler_t handler)
+static int x11_app_remove_native_event_listener(int type,
+						app_event_handler_t handler)
 {
 	list_node_t *node, *prev;
 	app_native_event_listener_t *listener;
@@ -251,10 +249,8 @@ static int app_remove_native_event_listener(int event_type,
 	for (list_each(node, &x11_app.native_listeners)) {
 		prev = node->prev;
 		listener = node->data;
-		if (listener->handler == handler &&
-		    listener->type == event_type) {
-			list_delete_node(&x11_app.native_listeners,
-					      node);
+		if (listener->handler == handler && listener->type == type) {
+			list_delete_node(&x11_app.native_listeners, node);
 			free(listener);
 			node = prev;
 			return 0;
@@ -277,8 +273,8 @@ static int x11_app_get_screen_height(void)
 
 static void x11_app_window_activate(app_window_t *wnd)
 {
-	XSetWMProtocols(x11_app.display, w->handle, &x11_app.wm_delete, 1);
-	XSelectInput(x11_app.display, w->handle,
+	XSetWMProtocols(x11_app.display, wnd->handle, &x11_app.wm_delete, 1);
+	XSelectInput(x11_app.display, wnd->handle,
 		     ExposureMask | KeyPressMask | ButtonPress |
 			 StructureNotifyMask | ButtonReleaseMask |
 			 KeyReleaseMask | EnterWindowMask | LeaveWindowMask |
@@ -299,15 +295,13 @@ static app_window_t *x11_app_window_create(const wchar_t *title, int x, int y,
 	wnd = malloc(sizeof(app_window_t));
 	wnd->gc = NULL;
 	wnd->ximage = NULL;
-	wnd->is_ready = FALSE;
 	wnd->node.data = wnd;
-	wnd->width = MIN_WIDTH;
-	wnd->height = MIN_HEIGHT;
+	wnd->width = width;
+	wnd->height = height;
 	pd_canvas_init(&wnd->fb);
-	LCUIMutex_Init(&wnd->mutex);
 	list_create(&wnd->rects);
 	wnd->fb.color_type = PD_COLOR_TYPE_ARGB;
-	wnd->window =
+	wnd->handle =
 	    XCreateSimpleWindow(x11_app.display, x11_app.win_root, x, y, width,
 				height, 1, bdcolor, bgcolor);
 	list_append_node(&x11_app.windows, &wnd->node);
@@ -332,12 +326,12 @@ static void x11_app_window_set_title(app_window_t *wnd, const wchar_t *title)
 	char *utf8_title;
 	XTextProperty name;
 
-	len = LCUI_EncodeString(NULL, title, 0, ENCODING_UTF8) + 1;
+	len = encode_utf8(NULL, title, 0) + 1;
 	utf8_title = malloc(sizeof(char) * len);
 	if (!title) {
 		return;
 	}
-	len = LCUI_EncodeString(utf8_title, title, len, ENCODING_UTF8);
+	len = encode_utf8(utf8_title, title, len);
 	name.value = (unsigned char *)utf8_title;
 	name.encoding = XA_STRING;
 	name.format = 8 * sizeof(char);
@@ -361,13 +355,13 @@ static void x11_app_window_set_size(app_window_t *wnd, int width, int height)
 		wnd->ximage = NULL;
 	}
 	if (wnd->gc) {
-		XFreeGC(x11.app->display, wnd->gc);
+		XFreeGC(x11_app.display, wnd->gc);
 		wnd->gc = NULL;
 	}
 	pd_canvas_init(&wnd->fb);
 	wnd->width = width;
 	wnd->height = height;
-	depth = DefaultDepth(x11.app->display, x11.app->screen);
+	depth = DefaultDepth(x11_app.display, x11_app.screen);
 	switch (depth) {
 	case 32:
 	case 24:
@@ -378,9 +372,9 @@ static void x11_app_window_set_size(app_window_t *wnd, int width, int height)
 		break;
 	}
 	pd_canvas_create(&wnd->fb, width, height);
-	visual = DefaultVisual(x11.app->display, x11.app->screen);
+	visual = DefaultVisual(x11_app.display, x11_app.screen);
 	wnd->ximage =
-	    XCreateImage(x11.app->display, visual, depth, ZPixmap, 0,
+	    XCreateImage(x11_app.display, visual, depth, ZPixmap, 0,
 			 (char *)(wnd->fb.bytes), width, height, 32, 0);
 	if (!wnd->ximage) {
 		pd_canvas_free(&wnd->fb);
@@ -389,22 +383,22 @@ static void x11_app_window_set_size(app_window_t *wnd, int width, int height)
 	}
 	gcv.graphics_exposures = False;
 	wnd->gc =
-	    XCreateGC(x11.app->display, wnd->window, GCGraphicsExposures, &gcv);
+	    XCreateGC(x11_app.display, wnd->handle, GCGraphicsExposures, &gcv);
 	if (!wnd->gc) {
 		logger_error("[x11_app] create graphics context faild.\n");
 		return;
 	}
-	XResizeWindow(x11_app.display, wnd->window, width, height);
+	XResizeWindow(x11_app.display, wnd->handle, width, height);
 }
 
 static void x11_app_window_set_position(app_window_t *wnd, int x, int y)
 {
-	XMoveWindow(x11_app.display, wnd->window, x, y);
+	XMoveWindow(x11_app.display, wnd->handle, x, y);
 }
 
 static void *x11_app_window_get_handle(app_window_t *wnd)
 {
-	return wnd->window;
+	return wnd->handle;
 }
 
 static int x11_app_window_get_width(app_window_t *wnd)
@@ -439,20 +433,20 @@ static void x11_app_window_set_max_height(app_window_t *wnd, int max_height)
 
 static void x11_app_window_show(app_window_t *wnd)
 {
-	XMapWindow(x11_app.display, wnd->window);
+	XMapWindow(x11_app.display, wnd->handle);
 }
 
 static void x11_app_window_hide(app_window_t *wnd)
 {
-	XUnmapWindow(x11_app.display, wnd->window);
+	XUnmapWindow(x11_app.display, wnd->handle);
 }
 
 static app_window_paint_t *x11_app_window_begin_paint(app_window_t *wnd,
-					       pd_rect_t *rect)
+						      pd_rect_t *rect)
 {
 	pd_paint_context_t *paint;
 
-	paint = malloc(sizeof(LCUI_PaintContextRec));
+	paint = malloc(sizeof(pd_paint_context_t));
 	paint->rect = *rect;
 	paint->with_alpha = FALSE;
 	pd_canvas_init(&paint->canvas);
@@ -470,7 +464,7 @@ static void x11_app_window_end_paint(app_window_t *wnd,
 	rect = malloc(sizeof(pd_rect_t));
 	*rect = paint->rect;
 	list_append(&wnd->rects, rect);
-	pd_canvas_init(paint->canvas);
+	pd_canvas_init(&paint->canvas);
 	free(paint);
 }
 
@@ -484,7 +478,7 @@ static void x11_app_window_present(app_window_t *wnd)
 	list_concat(&rects, &wnd->rects);
 	for (list_each(node, &rects)) {
 		rect = node->data;
-		XPutImage(x11_app.display, wnd->window, wnd->gc, wnd->ximage,
+		XPutImage(x11_app.display, wnd->handle, wnd->gc, wnd->ximage,
 			  rect->x, rect->y, rect->x, rect->y, rect->width,
 			  rect->height);
 	}
@@ -504,7 +498,6 @@ static void x11_app_init(void)
 {
 	x11_app.display = XOpenDisplay(NULL);
 	if (!x11_app.display) {
-		free(app);
 		return NULL;
 	}
 	x11_app.screen = DefaultScreen(x11_app.display);
@@ -519,16 +512,20 @@ static void x11_app_destroy(void)
 	XCloseDisplay(x11_app.display);
 }
 
-void x11_app_driver_init(app_driver_t *dirver)
+void x11_app_driver_init(app_driver_t *driver)
 {
 	driver->init = x11_app_init;
 	driver->destroy = x11_app_destroy;
-	driver->wait_event = x11_app_wait_event;
-	driver->process_events = x11_app_process_events;
+	driver->process_event = x11_app_process_native_event;
+	driver->process_events = x11_app_process_native_events;
+	driver->on_event = x11_app_add_native_event_listener;
+	driver->off_event = x11_app_remove_native_event_listener;
+	driver->create_window = x11_app_window_create;
+	driver->get_window = x11_app_get_window_by_handle;
 	driver->present = x11_app_present;
 }
 
-void x11_app_window_driver_init(app_window_driver_t *dirver)
+void x11_app_window_driver_init(app_window_driver_t *driver)
 {
 	driver->show = x11_app_window_show;
 	driver->hide = x11_app_window_hide;

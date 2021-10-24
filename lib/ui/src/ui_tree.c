@@ -1,5 +1,6 @@
 ﻿#include <assert.h>
-#include <LCUI.h>
+#include <string.h>
+#include <LCUI/util.h>
 #include "../include/ui.h"
 #include "internal.h"
 
@@ -138,7 +139,6 @@ int ui_widget_unwrap(ui_widget_t* w)
 		node = prev;
 		--len;
 	}
-	w->parent->update.for_children;
 	if (w->index == 0) {
 		ui_widget_add_status(target->next->data, "first-child");
 	}
@@ -202,7 +202,6 @@ int ui_widget_unlink(ui_widget_t* w)
 
 void ui_widget_empty(ui_widget_t* w)
 {
-	ui_widget_t* root = w;
 	ui_widget_t* child;
 	list_node_t* node;
 	ui_event_t ev = { 0 };
@@ -217,7 +216,7 @@ void ui_widget_empty(ui_widget_t* w)
 		ui_widget_add_mutation_recrod(w, record);
 		ui_mutation_record_destroy(record);
 	}
-	while (node = list_get_first_node(&w->children)) {
+	while ((node = list_get_first_node(&w->children)) != NULL) {
 		child = node->data;
 		list_unlink(&w->children, node);
 		ui_widget_emit_event(child, ev, NULL);

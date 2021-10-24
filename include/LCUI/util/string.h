@@ -34,7 +34,6 @@
 #define UTIL_STRING_H
 
 #include <wchar.h>
-#include <string.h>
 
 Y_BEGIN_DECLS
 
@@ -87,17 +86,6 @@ int cmdsplit(const char *cmd, char ***outargv);
  * @param[out] outstrs 分割后的字符串列表
  */
 int strsplit(const char *instr, const char *sep, char ***outstrs);
-
-/** 计算字符串占用的内存空间大小 */
-static inline size_t strsize(const char *str)
-{
-	return (!str) ? sizeof(char) : (strlen(str) + 1) * sizeof(char);
-}
-
-static inline size_t wcssize(const wchar_t *str)
-{
-	return (!str) ? sizeof(wchar_t) : (wcslen(str) + 1) * sizeof(wchar_t);
-}
 
 Y_END_DECLS
 

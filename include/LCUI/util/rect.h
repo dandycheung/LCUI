@@ -61,7 +61,7 @@ INLINE LCUI_BOOL LCUIRectF_HasPoint(pd_rectf_t *rect, float x, float y)
 }
 
 /** 将矩形区域范围调整在容器有效范围内 */
-LCUI_API LCUI_BOOL pd_rect_validate_area(pd_rect_t *rect, int box_w, int box_h);
+LCUI_API LCUI_BOOL LCUIRect_ValidateArea(pd_rect_t *rect, int box_w, int box_h);
 
 LCUI_API LCUI_BOOL LCUIRectF_ValidateArea(pd_rectf_t *rect, float box_w,
 					  float box_h);

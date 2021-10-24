@@ -1,4 +1,4 @@
-#include "../private.h"
+#include "../internal.h"
 
 #ifdef LCUI_PLATFORM_LINUX
 
@@ -8,9 +8,40 @@ static struct app_t {
 	app_id_t id;
 } linux_app;
 
+
+int app_process_native_event(void)
+{
+	return linux_app.app.process_event();
+}
+
+int app_process_native_events(void)
+{
+	return linux_app.app.process_events();
+}
+
+LCUI_API int app_get_screen_width(void)
+{
+	return linux_app.app.get_screen_width();
+}
+
+LCUI_API int app_get_screen_height(void)
+{
+	return linux_app.app.get_screen_height();
+}
+
+app_window_t *app_get_window_by_handle(void *handle)
+{
+	return linux_app.app.get_window(handle);
+}
+
 void app_window_close(app_window_t *wnd)
 {
 	return linux_app.window.close(wnd);
+}
+
+void app_window_activate(app_window_t *wnd)
+{
+	return linux_app.window.activate(wnd);
 }
 
 void app_window_set_title(app_window_t *wnd, const wchar_t *title)
@@ -88,9 +119,8 @@ void app_window_present(app_window_t *wnd)
 	linux_app.window.present(wnd);
 }
 
-app_window_t *app_create_create(const wchar_t *title, int x, int y,
-					   int width, int height,
-					   app_window_t *parent)
+app_window_t *app_window_create(const wchar_t *title, int x, int y, int width,
+				int height, app_window_t *parent)
 {
 	return linux_app.app.create_window(title, x, y, width, height, parent);
 }
@@ -118,11 +148,17 @@ int app_init_engine(const wchar_t *name)
 #endif
 	fb_app_driver_init(&linux_app.app);
 	fb_app_window_driver_init(&linux_app.window);
+	linux_mouse_init();
+	linux_keyboard_init();
 	return linux_app.app.init(name);
 }
 
 void app_destroy_engine(void)
 {
+	if (linux_app.id != APP_ID_LINUX_X11) {
+		linux_mouse_destroy();
+		linux_keyboard_destroy();
+	}
 	linux_app.app.destroy();
 }
 

@@ -50,12 +50,17 @@ void ui_widget_destroy(ui_widget_t* w)
 	free(w);
 }
 
+static void ui_widget_on_destroy_child(void *arg)
+{
+	ui_widget_destroy(arg);
+}
+
 static void ui_widget_destroy_children(ui_widget_t* w)
 {
 	/* 先释放显示列表，后销毁部件列表，因为部件在这两个链表中的节点是和它共用
 	 * 一块内存空间的，销毁部件列表会把部件释放掉，所以把这个操作放在后面 */
 	list_destroy_without_node(&w->stacking_context, NULL);
-	list_destroy_without_node(&w->children, ui_widget_destroy);
+	list_destroy_without_node(&w->children, ui_widget_on_destroy_child);
 }
 
 ui_widget_t* ui_create_widget(const char* type)

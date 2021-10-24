@@ -9,7 +9,6 @@ static LCUI_Mutex ui_widget_id_dict_mutex;
 
 int ui_widget_destroy_id(ui_widget_t* w)
 {
-	int ret = 0;
 	list_t *list;
 	list_node_t *node;
 

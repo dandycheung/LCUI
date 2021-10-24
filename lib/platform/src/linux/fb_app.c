@@ -1,4 +1,4 @@
-#include "../private.h"
+#include "../internal.h"
 
 #ifdef LCUI_PLATFORM_LINUX
 
@@ -11,6 +11,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <LCUI/graph.h>
 
 #define MIN_WIDTH 320
 #define MIN_HEIGHT 240
@@ -53,6 +54,8 @@ static struct fb_app_t {
 	LCUI_BOOL active;
 	pd_canvas_t canvas;
 } fbapp;
+
+static void fb_app_window_set_size(app_window_t *wnd, int width, int height);
 
 static void fb_app_print_info(void)
 {
@@ -133,13 +136,14 @@ static void fb_app_init_root_window(void)
 	list_create(&wnd->rects);
 	fbapp.window_count = 0;
 	wnd->canvas.color_type = PD_COLOR_TYPE_ARGB;
-	FBSurface_Resize(surface, app.screen_width, app.screen_height);
+	fb_app_window_set_size(&fbapp.window, fbapp.screen_width,
+			       fbapp.screen_height);
 }
 
 static void fb_app_init_canvas(void)
 {
-	fbapp.canvas.width = fbapp.width;
-	fbapp.canvas.height = fbapp.height;
+	fbapp.canvas.width = fbapp.screen_width;
+	fbapp.canvas.height = fbapp.screen_height;
 	fbapp.canvas.bytes = fbapp.fb.mem;
 	fbapp.canvas.bytes_per_row = fbapp.fb.fix_info.line_length;
 	fbapp.canvas.mem_size = fbapp.fb.mem_len;
@@ -158,9 +162,9 @@ static void fb_app_init_canvas(void)
 	memset(fbapp.canvas.bytes, 0, fbapp.canvas.mem_size);
 }
 
-static void fb_app_window_create(const wchar_t *title, int x, int y,
-				       int width, int height,
-				       app_window_t *parent)
+static app_window_t *fb_app_window_create(const wchar_t *title, int x, int y,
+					  int width, int height,
+					  app_window_t *parent)
 {
 	if (fbapp.window_count > 0) {
 		return NULL;
@@ -202,8 +206,8 @@ static void fb_app_window_set_max_height(app_window_t *wnd, int max_height)
 
 static void fb_app_window_set_size(app_window_t *wnd, int width, int height)
 {
-	wnd->width = max(width, MIN_WIDTH);
-	wnd->height = max(height, MIN_HEIGHT);
+	wnd->width = y_max(width, MIN_WIDTH);
+	wnd->height = y_max(height, MIN_HEIGHT);
 	wnd->x = (fbapp.screen_width - wnd->width) / 2;
 	wnd->y = (fbapp.screen_height - wnd->height) / 2;
 	wnd->rect.x = wnd->x;
@@ -214,6 +218,11 @@ static void fb_app_window_set_size(app_window_t *wnd, int width, int height)
 	LCUIRect_ValidateArea(&wnd->actual_rect, fbapp.screen_width,
 			      fbapp.screen_height);
 	pd_canvas_create(&wnd->canvas, wnd->width, wnd->height);
+}
+
+static app_window_t *fb_app_get_window_by_handle(void *handle)
+{
+	return &fbapp.window;
 }
 
 static void fb_app_window_set_title(app_window_t *wnd, const wchar_t *title)
@@ -238,7 +247,7 @@ static void fb_app_window_sync_rect16(pd_canvas_t *canvas, int x, int y)
 	unsigned char *dst, *dst_row;
 
 	pd_canvas_get_valid_rect(canvas, &rect);
-	pixel_row = canvawnd->argb + rect.y * canvawnd->width + rect.x;
+	pixel_row = canvas->argb + rect.y * canvas->width + rect.x;
 	dst_row = fbapp.fb.mem + y * fbapp.canvas.bytes_per_row + x * 2;
 	for (iy = 0; iy < rect.width; ++iy) {
 		dst = dst_row;
@@ -247,7 +256,7 @@ static void fb_app_window_sync_rect16(pd_canvas_t *canvas, int x, int y)
 			dst[0] = (pixel->r & 0xF8) | (pixel->b >> 5);
 			dst[1] = ((pixel->g & 0x1C) << 3) | (pixel->b >> 3);
 		}
-		pixel_row += canvawnd->width;
+		pixel_row += canvas->width;
 		dst_row += fbapp.canvas.bytes_per_row;
 	}
 }
@@ -270,7 +279,7 @@ static void fb_app_window_sync_rect8(pd_canvas_t *canvas, int x, int y)
 	cmap.blue = cmap_buf + 512;
 
 	pd_canvas_get_valid_rect(canvas, &rect);
-	pixel_row = canvawnd->argb + rect.y * canvawnd->width + rect.x;
+	pixel_row = canvas->argb + rect.y * canvas->width + rect.x;
 	dst_row = fbapp.fb.mem + y * fbapp.canvas.bytes_per_row + x;
 	for (iy = 0; iy < rect.height; ++iy) {
 		dst = dst_row;
@@ -289,7 +298,7 @@ static void fb_app_window_sync_rect8(pd_canvas_t *canvas, int x, int y)
 			*dst = (((r & 0xc0)) + ((g & 0xf0) >> 2) +
 				((b & 0xc0) >> 6));
 		}
-		pixel_row += canvawnd->width;
+		pixel_row += canvas->width;
 		dst_row += fbapp.canvas.bytes_per_row;
 	}
 	ioctl(fbapp.fb.dev_fd, FBIOPUTCMAP, &cmap);
@@ -346,24 +355,25 @@ static void fb_app_window_sync_rect(app_window_t *wnd, pd_rect_t *rect)
 }
 
 static app_window_paint_t *fb_app_window_begin_paint(app_window_t *wnd,
-						    pd_rect_t *rect)
+						     pd_rect_t *rect)
 {
 	app_window_paint_t *paint;
 	pd_rect_t actual_rect = *rect;
-	LCUIRect_ValidateArea(&actual_rect, surface->width, surface->height);
-	actual_rect.x += surface->rect.x;
-	actual_rect.y += surface->rect.y;
-	LCUIRect_GetOverlayRect(&actual_rect, &surface->actual_rect,
+	LCUIRect_ValidateArea(&actual_rect, wnd->width, wnd->height);
+	actual_rect.x += wnd->rect.x;
+	actual_rect.y += wnd->rect.y;
+	pd_rect_get_overlay_rect(&actual_rect, &wnd->actual_rect,
 				&actual_rect);
-	actual_rect.x -= surface->rect.x;
-	actual_rect.y -= surface->rect.y;
-	paint = pd_painter_begin(&surface->canvas, &actual_rect);
+	actual_rect.x -= wnd->rect.x;
+	actual_rect.y -= wnd->rect.y;
+	paint = pd_painter_begin(&wnd->canvas, &actual_rect);
 	pd_canvas_fill_rect(&paint->canvas, RGB(255, 255, 255), NULL, TRUE);
-	RectList_Add(&surface->rects, rect);
+	RectList_Add(&wnd->rects, rect);
 	return paint;
 }
 
-static void fb_app_window_end_paint(app_window_t *wnd, app_window_paint_t *paint)
+static void fb_app_window_end_paint(app_window_t *wnd,
+				    app_window_paint_t *paint)
 {
 	pd_painter_end(paint);
 }
@@ -376,7 +386,7 @@ static void fb_app_window_present(app_window_t *wnd)
 	list_create(&rects);
 	list_concat(&rects, &wnd->rects);
 	for (list_each(node, &rects)) {
-		fb_app_window_sync_rect(surface, node->data);
+		fb_app_window_sync_rect(wnd, node->data);
 	}
 	list_destroy(&rects, free);
 }
@@ -389,6 +399,11 @@ static int fb_app_get_screen_width(void)
 static int fb_app_get_screen_height(void)
 {
 	return fbapp.screen_height;
+}
+
+static void fb_app_present(void)
+{
+	
 }
 
 static void fb_app_init(void)
@@ -417,7 +432,7 @@ static void fb_app_init(void)
 	}
 	fb_app_print_info();
 	fb_app_init_canvas();
-	fb_app_init_window();
+	fb_app_init_root_window();
 }
 
 static void fb_app_destroy(void)
@@ -429,24 +444,24 @@ static void fb_app_destroy(void)
 	case 8:
 		ioctl(fbapp.fb.dev_fd, FBIOPUTCMAP, &fbapp.fb.cmap);
 	default:
-		pd_canvas_free(&fbapp.surface.canvas);
+		pd_canvas_free(&fbapp.window.canvas);
 		break;
 	}
-	EventTrigger_Destroy(fbapp.trigger);
 	close(fbapp.fb.dev_fd);
-	free(driver);
 	fbapp.fb.mem = NULL;
 	fbapp.fb.mem_len = 0;
 	fbapp.active = FALSE;
 }
 
-void fb_app_driver_init(app_driver_t *dirver)
+void fb_app_driver_init(app_driver_t *driver)
 {
 	driver->init = fb_app_init;
 	driver->destroy = fb_app_destroy;
 	driver->get_screen_width = fb_app_get_screen_width;
 	driver->get_screen_height = fb_app_get_screen_height;
 	driver->create_window = fb_app_window_create;
+	driver->get_window = fb_app_get_window_by_handle;
+	driver->present = fb_app_present;
 }
 
 void fb_app_window_driver_init(app_window_driver_t *driver)

@@ -139,34 +139,34 @@ void ui_destroy_events(void);
 
 // Style
 
-INLINE ui_widget_has_absolute_position(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_has_absolute_position(ui_widget_t* w)
 {
 	return w->computed_style.position == SV_ABSOLUTE;
 }
 
-INLINE ui_widget_has_block_display(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_has_block_display(ui_widget_t* w)
 {
 	return w->computed_style.display == SV_BLOCK;
 }
 
-INLINE ui_widget_has_flex_display(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_has_flex_display(ui_widget_t* w)
 {
 	return w->computed_style.display == SV_FLEX;
 }
 
-INLINE ui_widget_has_inline_block_display(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_has_inline_block_display(ui_widget_t* w)
 {
 	return w->computed_style.display == SV_INLINE_BLOCK;
 }
 
-INLINE ui_widget_has_fill_available_width(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_has_fill_available_width(ui_widget_t* w)
 {
 	return (ui_widget_has_block_display(w) ||
 		ui_widget_has_flex_display(w)) &&
 	       !ui_widget_has_absolute_position(w);
 }
 
-INLINE ui_widget_has_scale_size(ui_widget_t* w)
+INLINE LCUI_BOOL ui_widget_has_scale_size(ui_widget_t* w)
 {
 	return ui_widget_check_style_type(w, key_width, SCALE) ||
 	       ui_widget_check_style_type(w, key_height, SCALE);

@@ -18,7 +18,6 @@ static void OnQuit(void *arg)
 
 static void OnBtnClick(ui_widget_t* w, ui_event_t* ui_event, void *arg)
 {
-	LCUI_BOOL active = TRUE;
 	app_event_t e = { 0 };
 
 	lcui_set_timeout(10, OnRefreshScreen, NULL);

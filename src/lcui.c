@@ -170,7 +170,7 @@ int lcui_process_event(app_event_t *e)
 
 int lcui_process_events(void)
 {
-	int ret;
+	int ret = 0;
 	app_event_t e = { 0 };
 
 	lcui_process_timers();
@@ -235,7 +235,6 @@ void lcui_exit(int code)
 
 int lcui_main(void)
 {
-	LCUI_BOOL active = TRUE;
 	app_event_t e = { 0 };
 
 	while (lcui_get_event(&e)) {

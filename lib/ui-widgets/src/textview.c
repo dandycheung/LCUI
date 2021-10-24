@@ -304,7 +304,7 @@ static void TextView_OnPaint(ui_widget_t* w, pd_paint_context_t *paint,
 int TextView_SetTextW(ui_widget_t* w, const wchar_t *text)
 {
 	LCUI_TextView txt = GetData(w);
-	wchar_t *newtext = malloc(wcssize(text));
+	wchar_t *newtext = wcsdup2(text);
 
 	if (!newtext) {
 		return -ENOMEM;
@@ -312,7 +312,7 @@ int TextView_SetTextW(ui_widget_t* w, const wchar_t *text)
 	if (txt->content) {
 		free(txt->content);
 	}
-	txt->content = malloc(wcssize(text));
+	txt->content = wcsdup2(text);
 	if (!txt->content) {
 		free(newtext);
 		return -ENOMEM;

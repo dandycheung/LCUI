@@ -240,7 +240,7 @@ static pd_paint_context_t* UWPSurface_BeginPaint(LCUI_Surface surface,
 	paint->with_alpha = FALSE;
 	pd_canvas_init(&paint->canvas);
 	LCUIRect_MergeRect(&display.rect, &display.rect, rect);
-	pd_rect_validate_area(&paint->rect, UWPDisplay_GetWidth(),
+	LCUIRect_ValidateArea(&paint->rect, UWPDisplay_GetWidth(),
 			      UWPDisplay_GetHeight());
 	pd_canvas_quote(&paint->canvas, &display.frame, &paint->rect);
 	pd_canvas_fill_rect(&paint->canvas, RGB(255, 255, 255), NULL, TRUE);

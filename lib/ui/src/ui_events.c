@@ -1,4 +1,6 @@
 ﻿#include <math.h>
+#include <errno.h>
+#include <string.h>
 #include <LCUI.h>
 #include <LCUI/thread.h>
 #include "../include/ui.h"
@@ -227,7 +229,7 @@ static void ui_touch_capturer_destroy(void* arg)
 	free(tc);
 }
 
-INLINE ui_clear_touch_capturers(list_t* list)
+INLINE void ui_clear_touch_capturers(list_t* list)
 {
 	list_destroy_without_node(list, ui_touch_capturer_destroy);
 }
@@ -677,6 +679,7 @@ void ui_clear_event_target(ui_widget_t *w)
 		if (pack->widget == w) {
 			list_unlink(&ui_events.queue, node);
 			ui_event_pack_destroy(pack);
+			node = prev;
 		}
 	}
 	LCUIMutex_Unlock(&ui_events.mutex);
@@ -1013,6 +1016,11 @@ int ui_widget_post_surface_event(ui_widget_t *w, int event_type,
 	return ui_widget_post_event(root, &e, data, free);
 }
 
+static void ui_widget_on_destroy_listener(void *arg)
+{
+	ui_event_listener_destroy(arg);
+}
+
 void ui_widget_destroy_listeners(ui_widget_t *w)
 {
 	ui_event_t e = { UI_EVENT_DESTROY, 0 };
@@ -1023,7 +1031,7 @@ void ui_widget_destroy_listeners(ui_widget_t *w)
 	ui_clear_event_target(w);
 	if (w->extra) {
 		list_destroy_without_node(&w->extra->listeners,
-					  ui_event_listener_destroy);
+					  ui_widget_on_destroy_listener);
 	}
 }
 
@@ -1107,6 +1115,11 @@ int ui_dispatch_event(ui_event_t* e)
 	return -1;
 }
 
+static void ui_on_destroy_event_pack(void *arg)
+{
+	ui_event_pack_destroy(arg);
+}
+
 void ui_process_events(void)
 {
 	list_t queue;
@@ -1122,7 +1135,7 @@ void ui_process_events(void)
 					     pack->data);
 		}
 	}
-	list_destroy_without_node(&queue, ui_event_pack_destroy);
+	list_destroy_without_node(&queue, ui_on_destroy_event_pack);
 }
 
 void ui_destroy_events(void)
@@ -1131,7 +1144,7 @@ void ui_destroy_events(void)
 	rbtree_destroy(&ui_events.event_names);
 	dict_destroy(ui_events.event_ids);
 	ui_clear_touch_capturers(&ui_events.touch_capturers);
-	list_destroy_without_node(&ui_events.queue, ui_event_pack_destroy);
+	list_destroy_without_node(&ui_events.queue, ui_on_destroy_event_pack);
 	list_destroy(&ui_events.event_mappings, ui_event_mapping_destroy);
 	LCUIMutex_Unlock(&ui_events.mutex);
 	LCUIMutex_Destroy(&ui_events.mutex);

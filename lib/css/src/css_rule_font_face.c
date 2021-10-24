@@ -227,7 +227,7 @@ static int FontFaceParser_ParseValue(LCUI_CSSParserContext ctx)
 		if (data->face->font_family) {
 			free(data->face->font_family);
 		}
-		data->face->font_family = malloc(strsize(ctx->buffer));
+		data->face->font_family = strdup2(ctx->buffer);
 		if (!data->face->font_family) {
 			return -ENOMEM;
 		}

@@ -1,6 +1,7 @@
 #include <math.h>
-#include <LCUI.h>
-#include <ui/server.h>
+#include <LCUI/util.h>
+#include <LCUI/ui/server.h>
+#include <LCUI/main.h>
 #include <LCUI/gui/widget/textview.h>
 #include <LCUI/gui/widget/button.h>
 #include <LCUI/gui/widget/anchor.h>
@@ -13,6 +14,8 @@
 static struct lcui_ui_t {
 	lcui_display_mode_t mode;
 	ui_mutation_observer_t *observer;
+
+	/** list_t<app_window_t> */
 	list_t windows;
 } lcui_ui;
 
@@ -180,6 +183,11 @@ static void lcui_on_ui_mutation(ui_mutation_list_t *mutation_list,
 	}
 }
 
+static void lcui_on_destroy_window(void *data)
+{
+	app_window_close(data);
+}
+
 void lcui_set_ui_display_mode(lcui_display_mode_t mode)
 {
 	app_window_t *wnd;
@@ -188,7 +196,7 @@ void lcui_set_ui_display_mode(lcui_display_mode_t mode)
 	if (mode == lcui_ui.mode) {
 		return;
 	}
-	list_destroy(&lcui_ui.windows, app_window_close);
+	list_destroy(&lcui_ui.windows, lcui_on_destroy_window);
 	if (lcui_ui.observer) {
 		ui_mutation_observer_disconnect(lcui_ui.observer);
 		lcui_ui.observer = NULL;
@@ -239,7 +247,7 @@ void lcui_init_ui(void)
 
 void lcui_destroy_ui(void)
 {
-	list_destroy(&lcui_ui.windows, app_window_close);
+	list_destroy(&lcui_ui.windows, lcui_on_destroy_window);
 	if (lcui_ui.observer) {
 		ui_mutation_observer_disconnect(lcui_ui.observer);
 		ui_mutation_observer_destroy(lcui_ui.observer);

@@ -28,67 +28,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include <LCUI/header.h>
+#include "../internal.h"
 
-#ifdef LCUI_BUILD_IN_LINUX
+#ifdef LCUI_PLATFORM_LINUX
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <LCUI/LCUI.h>
-#include <LCUI/input.h>
-#include <LCUI/ui.h>
-#include <LCUI/ime.h>
-#include <LCUI/platform.h>
-#include LCUI_EVENTS_H
 
 #ifdef USE_LIBX11
 
-static struct LCUI_LinuxIMEModule {
-	int handler_id;
-} self;
-
-static LCUI_BOOL X11IME_ProcessKey(int key, int key_state)
+static LCUI_BOOL x11_ime_process_key(int key, LCUI_BOOL pressed)
 {
 	return FALSE;
 }
 
-static void X11IME_ToText(int ch)
+static void x11_ime_to_text(int ch)
 {
 	wchar_t text[2] = { ch, 0 };
 	ime_commit(text, 2);
 }
 
-static void OnKeyPress(app_event_t *e, void *arg)
+static void on_key_press(app_event_t *e, void *arg)
 {
 	wchar_t text[2] = { e->key.code, 0 };
 	_DEBUG_MSG("char: %c\n", e->key.code);
 	ime_commit(text, 2);
 }
 
-static LCUI_BOOL X11IME_Open(void)
+static LCUI_BOOL x11_ime_open(void)
 {
-	self.handler_id = LCUI_BindEvent(APP_EVENT_KEYPRESS, OnKeyPress, NULL, NULL);
+	app_on_event(APP_EVENT_KEYPRESS, on_key_press, NULL);
 	return TRUE;
 }
 
-static LCUI_BOOL X11IME_Close(void)
+static LCUI_BOOL x11_ime_close(void)
 {
-	LCUI_UnbindEvent(self.handler_id);
+	app_off_event(APP_EVENT_KEYPRESS, on_key_press);
 	return TRUE;
 }
 #endif
 
-int LCUI_RegisterLinuxIME(void)
+int ime_add_linux(void)
 {
 #ifdef USE_LIBX11
 	ime_handler_t handler;
-	if (LCUI_GetAppId() == LCUI_APP_LINUX_X11) {
-		handler.prockey = X11IME_ProcessKey;
-		handler.totext = X11IME_ToText;
-		handler.close = X11IME_Close;
-		handler.open = X11IME_Open;
+	if (app_get_id() == APP_ID_LINUX_X11) {
+		handler.prockey = x11_ime_process_key;
+		handler.totext = x11_ime_to_text;
+		handler.close = x11_ime_close;
+		handler.open = x11_ime_open;
 		handler.setcaret = NULL;
 		return ime_add("LCUI X11 Input Method", &handler);
 	}

@@ -168,7 +168,9 @@ LCUI_FontWeight LCUIFont_DetectWeight(const char *str)
 {
 	char *buf;
 	LCUI_FontWeight weight = FONT_WEIGHT_NORMAL;
-	if (!(buf = malloc(strsize(str)))) {
+
+	buf = strdup2(str);
+	if (!buf) {
 		return weight;
 	}
 	strtolower(buf, str);
@@ -196,7 +198,8 @@ LCUI_FontStyle LCUIFont_DetectStyle(const char *str)
 	char *buf;
 	LCUI_FontStyle style = FONT_STYLE_NORMAL;
 
-	if (!(buf = malloc(strsize(str)))) {
+	buf = strdup2(str);
+	if (!buf) {
 		return style;
 	}
 	strtolower(buf, str);

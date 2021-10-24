@@ -1,4 +1,5 @@
-﻿#include <LCUI.h>
+﻿#include <string.h>
+#include <LCUI/util.h>
 #include "../include/ui.h"
 #include "internal.h"
 
@@ -386,7 +387,7 @@ static size_t ui_widget_update_children(ui_widget_t* w,
 			continue;
 		}
 		w->extra->default_max_update_count = update_count * CLOCKS_PER_SEC /
-						 LCUI_MAX_FRAMES_PER_SEC / msec;
+						 120 / msec;
 		if (w->extra->default_max_update_count < 1) {
 			w->extra->default_max_update_count = 32;
 		}

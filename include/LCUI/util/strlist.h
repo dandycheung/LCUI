@@ -66,6 +66,13 @@ int strlist_has(strlist_t strlist, const char *str);
  */
 int strlist_remove(strlist_t *strlist, const char *str);
 
+/**
+ * 向已排序的字符串组添加字符串
+ * @param[in][out] strlist 字符串组
+ * @param[in] str 字符串
+ */
+int sortedstrlist_add(strlist_t *strlist, const char *str);
+
 /** 释放字符串组 */
 void strlist_free(strlist_t strs);
 

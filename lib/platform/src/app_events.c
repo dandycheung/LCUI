@@ -70,6 +70,7 @@ void app_event_destroy(app_event_t *e)
 		e->text.text = NULL;
 		e->text.length = 0;
 		break;
+	default: break;
 	}
 	e->type = APP_EVENT_NONE;
 }

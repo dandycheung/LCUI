@@ -76,6 +76,6 @@ void lcui_destroy_timers(void)
 		return;
 	}
 	timer_list_destroy(lcui_timers.list);
-	LCUIMutex_Destroy(lcui_timers.mutex);
+	LCUIMutex_Destroy(&lcui_timers.mutex);
 	lcui_timers.list = NULL;
 }

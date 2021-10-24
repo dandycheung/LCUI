@@ -123,9 +123,7 @@ void test_arial_font_load(void)
 
 void test_font_load(void)
 {
-	FILE *fp;
 	LCUI_InitFontLibrary();
-	fp = fopen("test_font_load.ttf", "rb");
 	/* 测试是否能够从字体文件中载入字体 */
 	it_i("check LCUIFont_LoadFile success",
 	     LCUIFont_LoadFile("test_font_load.ttf"), 0);

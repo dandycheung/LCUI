@@ -1235,7 +1235,7 @@ static void TextLayer_ValidateArea(LCUI_TextLayer layer, pd_rect_t *area)
 	} else {
 		height = TextLayer_GetHeight(layer);
 	}
-	pd_rect_validate_area(area, width, height);
+	LCUIRect_ValidateArea(area, width, height);
 }
 
 static void TextLayer_DrawChar(LCUI_TextLayer layer, LCUI_TextChar ch,

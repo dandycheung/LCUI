@@ -1,4 +1,5 @@
-#include <ui.h>
+#include <errno.h>
+#include "../include/ui.h"
 
 typedef struct ui_mutation_connection_t {
 	ui_widget_t *widget;
@@ -154,11 +155,16 @@ void ui_mutation_observer_disconnect(ui_mutation_observer_t *observer)
 	list_destroy_without_node(&observer->connections, free);
 }
 
+static void ui_on_destroy_mutaion_record(void *arg)
+{
+	ui_mutation_record_destroy(arg);
+}
+
 void ui_mutation_observer_destroy(ui_mutation_observer_t *observer)
 {
 	list_unlink(&ui_observers, &observer->node);
 	list_destroy_without_node(&observer->connections, free);
-	list_destroy(&observer->records, ui_mutation_record_destroy);
+	list_destroy(&observer->records, ui_on_destroy_mutaion_record);
 	free(observer);
 }
 
@@ -174,7 +180,7 @@ void ui_process_mutation_observers(void)
 		if (observer->records.length > 0) {
 			list_concat(&records, &observer->records);
 			observer->callback(&records, observer, observer->data);
-			list_destroy(&records, ui_mutation_record_destroy);
+			list_destroy(&records, ui_on_destroy_mutaion_record);
 		}
 	}
 }
