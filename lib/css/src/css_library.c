@@ -508,12 +508,12 @@ LCUI_StyleSheet StyleSheet(void)
 {
 	LCUI_StyleSheet ss;
 
-	ss = malloc(sizeof(LCUI_StyleSheetRec));
+	ss = calloc(sizeof(LCUI_StyleSheetRec), 1);
 	if (!ss) {
 		return ss;
 	}
 	ss->length = LCUI_GetStyleTotal();
-	ss->sheet = malloc(sizeof(LCUI_StyleRec) * ss->length + 1);
+	ss->sheet = calloc(sizeof(LCUI_StyleRec), ss->length + 1);
 	return ss;
 }
 
@@ -1008,10 +1008,10 @@ LCUI_Selector Selector(const char *selector)
 	char type = 0, name[MAX_NAME_LEN];
 	LCUI_BOOL is_saving = FALSE;
 	LCUI_SelectorNode node = NULL;
-	LCUI_Selector s = malloc(sizeof(LCUI_SelectorRec));
+	LCUI_Selector s = calloc(sizeof(LCUI_SelectorRec), 1);
 
 	s->batch_num = ++batch_num;
-	s->nodes = malloc(sizeof(LCUI_SelectorNode) * MAX_SELECTOR_DEPTH);
+	s->nodes = calloc(sizeof(LCUI_SelectorNode), MAX_SELECTOR_DEPTH);
 	if (!selector) {
 		s->length = 0;
 		s->nodes[0] = NULL;
@@ -1019,7 +1019,7 @@ LCUI_Selector Selector(const char *selector)
 	}
 	for (ni = 0, si = 0, p = selector; *p; ++p) {
 		if (!node && is_saving) {
-			node = malloc(sizeof(LCUI_SelectorNodeRec));
+			node = calloc(sizeof(LCUI_SelectorNodeRec), 1);
 			if (si >= MAX_SELECTOR_DEPTH) {
 				logger_warning(
 				    "%s: selector node list is too long.\n",
@@ -1097,7 +1097,7 @@ LCUI_Selector Selector(const char *selector)
 	}
 	if (is_saving) {
 		if (!node) {
-			node = malloc(sizeof(LCUI_SelectorNodeRec));
+			node = calloc(sizeof(LCUI_SelectorNodeRec), 1);
 			if (si >= MAX_SELECTOR_DEPTH) {
 				logger_warning(
 				    "%s: selector node list is too long.\n",
@@ -1128,7 +1128,7 @@ LCUI_Selector Selector_Copy(LCUI_Selector selector)
 
 	s = Selector(NULL);
 	for (i = 0; i < selector->length; ++i) {
-		s->nodes[i] = malloc(sizeof(LCUI_SelectorNodeRec));
+		s->nodes[i] = calloc(sizeof(LCUI_SelectorNodeRec), 1);
 		SelectorNode_Copy(s->nodes[i], selector->nodes[i]);
 	}
 	s->nodes[selector->length] = NULL;
@@ -1156,7 +1156,7 @@ static void DeleteStyleNode(StyleNode node)
 
 static StyleLink CreateStyleLink(void)
 {
-	StyleLink link = malloc(sizeof(StyleLinkRec));
+	StyleLink link = calloc(sizeof(StyleLinkRec), 1);
 	static dict_type_t t;
 
 	dict_init_string_copy_key_type(&t);
@@ -1179,8 +1179,8 @@ static void DeleteStyleLink(StyleLink link)
 
 static StyleLinkGroup CreateStyleLinkGroup(LCUI_SelectorNode snode)
 {
-	StyleLinkGroup group = malloc(sizeof(StyleLinkGroupRec));
-	group->snode = malloc(sizeof(LCUI_SelectorNodeRec));
+	StyleLinkGroup group = calloc(sizeof(StyleLinkGroupRec), 1);
+	group->snode = calloc(sizeof(LCUI_SelectorNodeRec), 1);
 	SelectorNode_Copy(group->snode, snode);
 	group->name = group->snode->fullname;
 	group->links = dict_create(&library.style_link_dict, NULL);
@@ -1277,7 +1277,7 @@ static LCUI_StyleList LCUI_SelectStyleList(LCUI_Selector selector,
 	if (!link) {
 		return NULL;
 	}
-	snode = malloc(sizeof(StyleNodeRec));
+	snode = calloc(sizeof(StyleNodeRec), 1);
 	if (space) {
 		snode->space = strpool_alloc_str(library.strpool, space);
 		strcpy(snode->space, space);

@@ -996,7 +996,7 @@ static int CSSParser_ParseStyleName(LCUI_CSSParserContext ctx)
 		CSSParser_EndBuffer(ctx);
 		ctx->style.parser = LCUI_GetCSSPropertyParser(ctx->buffer);
 		DEBUG_MSG("select style: %s, parser: %p\n", ctx->buffer,
-			  ctx->style_parser);
+			  ctx->style.parser);
 		break;
 	case '}':
 		ctx->target = CSS_TARGET_NONE;
@@ -1135,7 +1135,7 @@ LCUI_CSSParserContext CSSParser_Begin(size_t buffer_size, const char *space)
 {
 	LCUI_CSSParserContext ctx;
 
-	ctx = malloc(sizeof(LCUI_CSSParserContextRec));
+	ctx = calloc(sizeof(LCUI_CSSParserContextRec), 1);
 	if (space) {
 		ctx->space = strdup2(space);
 		ctx->style.dirname = getdirname(ctx->space);
@@ -1143,7 +1143,7 @@ LCUI_CSSParserContext CSSParser_Begin(size_t buffer_size, const char *space)
 		ctx->space = NULL;
 		ctx->style.dirname = NULL;
 	}
-	ctx->buffer = malloc(sizeof(char) * buffer_size);
+	ctx->buffer = calloc(sizeof(char), buffer_size);
 	ctx->buffer_size = buffer_size;
 	ctx->target = CSS_TARGET_NONE;
 	ctx->style.space = ctx->space;
@@ -1192,7 +1192,7 @@ int LCUI_AddCSSPropertyParser(LCUI_CSSPropertyParser sp)
 		return -2;
 	}
 	self.count += 1;
-	new_sp = malloc(sizeof(LCUI_CSSPropertyParserRec));
+	new_sp = calloc(sizeof(LCUI_CSSPropertyParserRec), 1);
 	new_sp->key = sp->key;
 	new_sp->parse = sp->parse;
 	new_sp->name = strdup2(sp->name);

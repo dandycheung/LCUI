@@ -284,11 +284,11 @@ int CSSParser_InitFontFaceRuleParser(LCUI_CSSParserContext ctx)
 	FontFaceParserContext data;
 
 	parser = &ctx->rule.parsers[CSS_RULE_FONT_FACE];
-	data = malloc(sizeof(FontFaceParserContextRec));
+	data = calloc(sizeof(FontFaceParserContextRec), 1);
 	if (!data) {
 		return -ENOMEM;
 	}
-	data->face = malloc(sizeof(LCUI_CSSFontFaceRec));
+	data->face = calloc(sizeof(LCUI_CSSFontFaceRec), 1);
 	if (!data->face) {
 		free(data);
 		return -ENOMEM;

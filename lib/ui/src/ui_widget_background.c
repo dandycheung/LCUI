@@ -9,7 +9,7 @@ void ui_widget_init_background(ui_widget_t *w)
 	pd_background_style_t *bg;
 	bg = &w->computed_style.background;
 	bg->color = RGB(255, 255, 255);
-	pd_canvas_init(bg->image);
+	bg->image = NULL;
 	bg->size.using_value = TRUE;
 	bg->size.value = SV_AUTO;
 	bg->position.using_value = TRUE;
@@ -19,7 +19,7 @@ void ui_widget_init_background(ui_widget_t *w)
 void ui_widget_destroy_background(ui_widget_t *w)
 {
 	ui_widget_unset_style(w, key_background_image);
-	pd_canvas_init(w->computed_style.background.image);
+	w->computed_style.background.image = NULL;
 	if (ui_widget_check_style_type(w, key_background_image, string)) {
 		ui_image_remove_ref(
 		    (ui_image_t *)&w->computed_style.background.image);
