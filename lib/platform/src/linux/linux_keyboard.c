@@ -73,7 +73,7 @@ static void linux_keyboard_thread(void *arg)
 	}
 }
 
-static int linux_keyboard_init(void)
+int linux_keyboard_init(void)
 {
 	linux_keyboard.dev_path = getenv("LCUI_KEYBOARD_DEVICE");
 	if (!linux_keyboard.dev_path) {
@@ -84,11 +84,11 @@ static int linux_keyboard_init(void)
 		logger_error("[input] open keyboard device failed");
 		return -1;
 	}
-	LCUIThread_Create(&linux_keyboard.tid, LinuxKeybnoardThread, NULL);
+	LCUIThread_Create(&linux_keyboard.tid, linux_keyboard_thread, NULL);
 	return 0;
 }
 
-static int linux_keyboard_destroy(void)
+int linux_keyboard_destroy(void)
 {
 	if (!linux_keyboard.active) {
 		return -1;

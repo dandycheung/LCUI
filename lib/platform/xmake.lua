@@ -9,6 +9,10 @@ option("enable-touch")
     set_default(true)
     set_configvar("ENABLE_TOUCH", 1)
 
+option("use-linux-input-event")
+    set_showmenu(true)
+    set_configvar("USE_LINUX_INPUT_EVENT", 1)
+
 option("uwp", {showmenu = true, default = false})
 
 if has_config("with-libx11") then
@@ -45,6 +49,7 @@ target("lcui-platform-linux")
     else
         set_default(false)
     end
+    add_options("use-linux-input-event")
     add_packages("libx11")
     if has_package("libx11") then
         set_configvar("USE_LIBX11", 1)
