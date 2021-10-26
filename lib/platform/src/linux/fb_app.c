@@ -362,8 +362,7 @@ static app_window_paint_t *fb_app_window_begin_paint(app_window_t *wnd,
 	LCUIRect_ValidateArea(&actual_rect, wnd->width, wnd->height);
 	actual_rect.x += wnd->rect.x;
 	actual_rect.y += wnd->rect.y;
-	pd_rect_get_overlay_rect(&actual_rect, &wnd->actual_rect,
-				&actual_rect);
+	pd_rect_get_overlay_rect(&actual_rect, &wnd->actual_rect, &actual_rect);
 	actual_rect.x -= wnd->rect.x;
 	actual_rect.y -= wnd->rect.y;
 	paint = pd_painter_begin(&wnd->canvas, &actual_rect);
@@ -403,7 +402,6 @@ static int fb_app_get_screen_height(void)
 
 static void fb_app_present(void)
 {
-	
 }
 
 static void fb_app_init(void)
@@ -453,10 +451,35 @@ static void fb_app_destroy(void)
 	fbapp.active = FALSE;
 }
 
+static int fb_app_on_event(int type, app_event_handler_t handler, void *data)
+{
+	return -1;
+}
+
+static int fb_app_off_event(int type, app_event_handler_t handler)
+{
+	return -1;
+}
+
+
+static int fb_app_process_event(void)
+{
+	return 0;
+}
+
+static int fb_app_process_events(void)
+{
+	return 0;
+}
+
 void fb_app_driver_init(app_driver_t *driver)
 {
 	driver->init = fb_app_init;
 	driver->destroy = fb_app_destroy;
+	driver->on_event = fb_app_on_event;
+	driver->off_event = fb_app_off_event;
+	driver->process_event = fb_app_process_event;
+	driver->process_events = fb_app_process_events;
 	driver->get_screen_width = fb_app_get_screen_width;
 	driver->get_screen_height = fb_app_get_screen_height;
 	driver->create_window = fb_app_window_create;

@@ -123,7 +123,7 @@ static app_window_t *x11_app_get_window_by_handle(void *handle)
 	return NULL;
 }
 
-static LCUI_BOOL x11_app_process_native_event(void)
+static int x11_app_process_native_event(void)
 {
 	KeySym keysym;
 	Display *dsp = x11_app.display;
@@ -213,14 +213,15 @@ static LCUI_BOOL x11_app_process_native_event(void)
 			listener->handler(&xe, listener->data);
 		}
 	}
-	return TRUE;
+	return 1;
 }
 
-static void x11_app_process_native_events(void)
+static int x11_app_process_native_events(void)
 {
 	while (XEventsQueued(x11_app.display, QueuedAlready)) {
 		x11_app_process_native_event();
 	}
+	return 0;
 }
 
 static int x11_app_add_native_event_listener(int type,
@@ -494,17 +495,18 @@ static void x11_app_present(void)
 	}
 }
 
-static void x11_app_init(void)
+static int x11_app_init(void)
 {
 	x11_app.display = XOpenDisplay(NULL);
 	if (!x11_app.display) {
-		return NULL;
+		return -1;
 	}
 	x11_app.screen = DefaultScreen(x11_app.display);
 	x11_app.win_root = RootWindow(x11_app.display, x11_app.screen);
 	x11_app.cmap = DefaultColormap(x11_app.display, x11_app.screen);
 	x11_app.wm_delete =
 	    XInternAtom(x11_app.display, "WM_DELETE_WINDOW", FALSE);
+	return 0;
 }
 
 static void x11_app_destroy(void)
