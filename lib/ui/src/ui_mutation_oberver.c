@@ -91,6 +91,8 @@ ui_mutation_observer_t *ui_mutation_observer_create(
 	}
 	observer->callback = callback;
 	observer->data = data;
+	observer->node.data = observer;
+	list_create(&observer->records);
 	list_create(&observer->connections);
 	list_append_node(&ui_observers, &observer->node);
 	return observer;

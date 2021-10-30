@@ -18,6 +18,8 @@ typedef enum app_id_t {
 
 typedef enum app_event_type_t {
 	APP_EVENT_NONE,
+	APP_EVENT_TIMER,
+	APP_EVENT_TASK,
 	APP_EVENT_KEYDOWN,
 	APP_EVENT_KEYPRESS,
 	APP_EVENT_KEYUP,

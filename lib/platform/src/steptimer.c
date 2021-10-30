@@ -3,8 +3,7 @@
  */
 
 #include <stdlib.h>
-#include <LCUI/util.h>
-#include "platform.h"
+#include "./internal.h"
 
 void step_timer_init(step_timer_t *timer)
 {
@@ -52,8 +51,7 @@ void step_timer_tick(step_timer_t *timer, step_timer_handler_t handler,
 		// to just round small deviations down to zero to leave things
 		// running smoothly.
 
-		if (abs((int)(time_delta - timer->target_elapsed_time)) <
-		    4000) {
+		if (abs((int)(time_delta - timer->target_elapsed_time)) < 4) {
 			time_delta = timer->target_elapsed_time;
 		}
 

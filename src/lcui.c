@@ -66,9 +66,9 @@ void lcui_post_async_task(LCUI_Task task, int worker_id)
 	LCUIWorker_PostTask(lcui_app.workers[worker_id], task);
 }
 
-int lcui_get_fps(void)
+uint32_t lcui_get_fps(void)
 {
-	return lcui_app.timer.frames_this_second;
+	return lcui_app.timer.frames_per_second;
 }
 
 void lcui_init_app(void)
@@ -85,8 +85,12 @@ void lcui_init_app(void)
 
 void lcui_set_frame_rate_cap(unsigned rate_cap)
 {
-	lcui_app.timer.target_elapsed_time =
-	    rate_cap > 0 ? 1000 / rate_cap : 0;
+	if (rate_cap > 0) {
+		lcui_app.timer.target_elapsed_time = 1000 / rate_cap;
+		lcui_app.timer.is_fixed_time_step = TRUE;
+	} else {
+		lcui_app.timer.is_fixed_time_step = FALSE;
+	}
 }
 
 static void lcui_destroy_app(void)
@@ -142,8 +146,16 @@ static void lcui_app_on_tick(step_timer_t *timer, void *data)
 int lcui_get_event(app_event_t *e)
 {
 	do {
-		lcui_process_timers();
-		while (LCUIWorker_RunTask(lcui_app.main_worker));
+		if (lcui_process_timers() > 0) {
+			e->type = APP_EVENT_TIMER;
+			e->window = NULL;
+			return 1;
+		}
+		if (LCUIWorker_RunTask(lcui_app.main_worker)) {
+			e->type = APP_EVENT_TASK;
+			e->window = NULL;
+			return 1;
+		}
 		if (app_poll_event(e)) {
 			if (e->type == APP_EVENT_QUIT) {
 				return 0;
@@ -173,18 +185,11 @@ int lcui_process_events(void)
 	int ret = 0;
 	app_event_t e = { 0 };
 
-	lcui_process_timers();
-	while (LCUIWorker_RunTask(lcui_app.main_worker));
-	app_process_native_events();
-	while (app_poll_event(&e)) {
-		ret= lcui_process_event(&e);
-		if (ret == -1) {
-			break;
+	while (ret == 0) {
+		app_process_native_events();
+		while (app_poll_event(&e)) {
+			ret = lcui_process_event(&e);
 		}
-		lcui_dispatch_ui_event(&e);
-		lcui_update_ui();
-		step_timer_tick(&lcui_app.timer, lcui_app_on_tick, NULL);
-		app_event_destroy(&e);
 	}
 	return ret;
 }
@@ -233,12 +238,17 @@ void lcui_exit(int code)
 	lcui_quit();
 }
 
-int lcui_main(void)
+void lcui_run(void)
 {
 	app_event_t e = { 0 };
 
 	while (lcui_get_event(&e)) {
 		lcui_process_event(&e);
 	}
+}
+
+int lcui_main(void)
+{
+	lcui_run();
 	return lcui_destroy();
 }

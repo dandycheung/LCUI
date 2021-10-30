@@ -143,21 +143,11 @@ void ui_widget_bind_property(ui_widget_t* w, const char* name,
 
 ui_widget_extra_data_t* ui_create_extra_data(ui_widget_t* widget)
 {
-	widget->extra = malloc(sizeof(ui_widget_extra_data_t));
-	if (!widget->extra) {
-		return NULL;
+	widget->extra = calloc(sizeof(ui_widget_extra_data_t), 1);
+	if (widget->extra) {
+		return widget->extra;
 	}
-	list_create(&widget->extra->listeners);
-	widget->extra->rules.only_on_visible = FALSE;
-	widget->extra->rules.first_update_visible_children = FALSE;
-	widget->extra->rules.cache_children_style = FALSE;
-	widget->extra->rules.ignore_classes_change = FALSE;
-	widget->extra->rules.ignore_status_change = FALSE;
-	widget->extra->rules.max_update_children_count = FALSE;
-	widget->extra->rules.max_render_children_count = FALSE;
-	widget->extra->rules.on_update_progress = FALSE;
-	widget->extra->observer = NULL;
-	return widget->extra;
+	return NULL;
 }
 
 void ui_widget_get_offset(ui_widget_t* w, ui_widget_t* parent, float* offset_x,

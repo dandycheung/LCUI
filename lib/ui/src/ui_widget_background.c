@@ -51,7 +51,7 @@ void ui_widget_compute_background_style(ui_widget_t *widget)
 			break;
 		case key_background_image:
 			if (!s->is_valid) {
-				pd_canvas_init(bg->image);
+				bg->image = NULL;
 				break;
 			}
 			switch (s->type) {

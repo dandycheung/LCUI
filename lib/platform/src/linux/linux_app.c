@@ -150,10 +150,10 @@ int app_init_engine(const wchar_t *name)
 #endif
 	fb_app_driver_init(&linux_app.app);
 	fb_app_window_driver_init(&linux_app.window);
-	linux_mouse_init();
-	linux_keyboard_init();
 	if (linux_app.app.init(name) == 0) {
 		linux_app.active = TRUE;
+		linux_mouse_init();
+		linux_keyboard_init();
 		return 0;
 	}
 	return -1;

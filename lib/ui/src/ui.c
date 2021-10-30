@@ -16,6 +16,7 @@ void ui_init(void)
 
 void ui_destroy(void)
 {
+	ui_destroy_root();
 	ui_destroy_events();
 	ui_destroy_image_loader();
 	ui_destroy_widget_id();

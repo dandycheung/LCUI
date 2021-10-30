@@ -95,7 +95,7 @@ LCUI_API int lcui_process_events(void);
 
 // Base
 
-LCUI_API int lcui_get_fps(void);
+LCUI_API uint32_t lcui_get_fps(void);
 
 LCUI_API void lcui_set_frame_rate_cap(unsigned rate_cap);
 
@@ -105,6 +105,8 @@ LCUI_API void lcui_init_base(void);
 LCUI_API void lcui_init(void);
 
 LCUI_API int lcui_main(void);
+
+LCUI_API void lcui_run(void);
 
 /** 获取LCUI的版本 */
 LCUI_API const char *lcui_get_version(void);

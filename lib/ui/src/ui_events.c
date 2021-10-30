@@ -326,6 +326,7 @@ int ui_widget_add_event_listener(ui_widget_t *w, int event_id,
 	listener->data = data;
 	listener->event_id = event_id;
 	listener->destroy_data = destroy_data;
+	listener->node.data = listener;
 	list_append_node(&ui_widget_use_extra_data(w)->listeners, &listener->node);
 	return 0;
 }
@@ -435,6 +436,7 @@ int ui_widget_post_event(ui_widget_t *w, const ui_event_t* e, void* data,
 	pack->widget = w;
 	pack->data = data;
 	pack->destroy_data = destroy_data;
+	pack->node.data = pack;
 	list_append_node(&ui_events.queue, &pack->node);
 	return 0;
 }
@@ -1074,6 +1076,8 @@ void ui_init_events(void)
 	LCUIMutex_Init(&ui_events.mutex);
 	rbtree_init(&ui_events.event_names);
 	list_create(&ui_events.event_mappings);
+	list_create(&ui_events.touch_capturers);
+	list_create(&ui_events.queue);
 	ui_events.targets[UI_WIDGET_STATUS_ACTIVE] = NULL;
 	ui_events.targets[UI_WIDGET_STATUS_HOVER] = NULL;
 	ui_events.targets[UI_WIDGET_STATUS_FOCUS] = NULL;
@@ -1090,7 +1094,6 @@ void ui_init_events(void)
 	for (i = 0; i < n; ++i) {
 		ui_set_event_id(mappings[i].id, mappings[i].name);
 	}
-	list_create(&ui_events.touch_capturers);
 }
 
 int ui_dispatch_event(ui_event_t* e)

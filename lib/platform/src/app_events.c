@@ -84,7 +84,7 @@ int app_post_event(app_event_t *e)
 		return -ENOMEM;
 	}
 	app_event_copy(ev, e);
-	list_append(e->data, ev);
+	list_append(&app_events.queue, ev);
 	return 0;
 }
 

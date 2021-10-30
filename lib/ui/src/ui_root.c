@@ -19,3 +19,8 @@ void ui_init_root(void)
 	ui_root_widget = ui_create_widget("root");
 	ui_widget_set_title(ui_root_widget, L"LCUI Display");
 }
+
+void ui_destroy_root(void)
+{
+	ui_widget_destroy(ui_root_widget);
+}

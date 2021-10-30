@@ -7,11 +7,11 @@ static void check_settings_frame_rate_cap(void *arg)
 {
 	char str[256];
 	int fps_limit = *((int *)arg);
-	int fps = lcui_get_fps();
+	uint32_t fps = lcui_get_fps();
 
-	sprintf(str, "should work when frame cap is %d (actual %d)", fps_limit,
+	sprintf(str, "should work when frame cap is %u (actual %u)", fps_limit,
 		fps);
-	it_b(str, fps <= fps_limit && fps > fps_limit / 2, TRUE);
+	it_b(str, fps <= fps_limit + 1 && fps > fps_limit / 2, TRUE);
 	lcui_quit();
 }
 
@@ -64,6 +64,7 @@ static void test_apply_settings(void)
 
 	lcui_reset_settings();
 
+	lcui_get_settings(&settings);
 	it_i("check frame rate cap", settings.frame_rate_cap, LCUI_MAX_FRAMES_PER_SEC);
 	lcui_destroy();
 }
@@ -77,28 +78,28 @@ void test_settings_frame_rate_cap(void)
 
 	settings.frame_rate_cap = 30;
 	lcui_apply_settings(&settings);
-	lcui_set_timeout(1000, check_settings_frame_rate_cap,
+	lcui_set_timeout(1500, check_settings_frame_rate_cap,
 			&settings.frame_rate_cap);
 	lcui_main();
 
 	lcui_init();
 	settings.frame_rate_cap = 5;
 	lcui_apply_settings(&settings);
-	lcui_set_timeout(1000, check_settings_frame_rate_cap,
+	lcui_set_timeout(1500, check_settings_frame_rate_cap,
 			&settings.frame_rate_cap);
 	lcui_main();
 
 	lcui_init();
 	settings.frame_rate_cap = 90;
 	lcui_apply_settings(&settings);
-	lcui_set_timeout(1000, check_settings_frame_rate_cap,
+	lcui_set_timeout(1500, check_settings_frame_rate_cap,
 			&settings.frame_rate_cap);
 	lcui_main();
 
 	lcui_init();
 	settings.frame_rate_cap = 25;
 	lcui_apply_settings(&settings);
-	lcui_set_timeout(1000, check_settings_frame_rate_cap,
+	lcui_set_timeout(1500, check_settings_frame_rate_cap,
 			&settings.frame_rate_cap);
 	lcui_main();
 }
