@@ -3,6 +3,7 @@
 #ifdef LCUI_PLATFORM_LINUX
 
 static struct app_t {
+	LCUI_BOOL active;
 	app_window_driver_t window;
 	app_driver_t app;
 	app_id_t id;
@@ -143,6 +144,7 @@ int app_init_engine(const wchar_t *name)
 	x11_app_window_driver_init(&linux_app.window);
 	if (linux_app.app.init(name) == 0) {
 		linux_app.id = APP_ID_LINUX_X11;
+		linux_app.active = TRUE;
 		return 0;
 	}
 #endif
@@ -150,16 +152,23 @@ int app_init_engine(const wchar_t *name)
 	fb_app_window_driver_init(&linux_app.window);
 	linux_mouse_init();
 	linux_keyboard_init();
-	return linux_app.app.init(name);
+	if (linux_app.app.init(name) == 0) {
+		linux_app.active = TRUE;
+		return 0;
+	}
+	return -1;
 }
 
-void app_destroy_engine(void)
+int app_destroy_engine(void)
 {
+	if (!linux_app.active) {
+		return -1;
+	}
 	if (linux_app.id != APP_ID_LINUX_X11) {
 		linux_mouse_destroy();
 		linux_keyboard_destroy();
 	}
-	linux_app.app.destroy();
+	return linux_app.app.destroy();
 }
 
 #endif

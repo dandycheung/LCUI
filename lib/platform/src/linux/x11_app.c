@@ -8,6 +8,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
+#include <X11/XKBlib.h>
 #include <LCUI/graph.h>
 
 struct app_window_t {
@@ -111,180 +112,6 @@ static int convert_keycode(KeySym keysym)
 	return keysym;
 }
 
-static app_window_t *x11_app_get_window_by_handle(void *handle)
-{
-	list_node_t *node;
-
-	for (list_each(node, &x11_app.windows)) {
-		if (((app_window_t *)node->data)->handle == handle) {
-			return node->data;
-		}
-	}
-	return NULL;
-}
-
-static int x11_app_process_native_event(void)
-{
-	KeySym keysym;
-	Display *dsp = x11_app.display;
-	XEvent xe = { 0 };
-
-	list_node_t *node;
-	app_window_t *wnd;
-	app_native_event_listener_t *listener;
-	app_event_t e = { 0 };
-
-	XNextEvent(x11_app.display, &xe);
-	switch (xe.type) {
-	case ConfigureNotify:
-		e.type = APP_EVENT_SIZE;
-		e.window = x11_app_get_window_by_handle(xe.xconfigure.window);
-		x11_app_window_set_size(e.window, xe.xconfigure.width,
-				      xe.xconfigure.height);
-		break;
-	case Expose:
-		e.window = x11_app_get_window_by_handle(xe.xexpose.window);
-		e.type = APP_EVENT_PAINT;
-		e.paint.rect.x = xe.xexpose.x;
-		e.paint.rect.y = xe.xexpose.y;
-		e.paint.rect.width = xe.xexpose.width;
-		e.paint.rect.height = xe.xexpose.height;
-		app_post_event(&e);
-		break;
-	case KeyPress:
-	case KeyRelease:
-		e.type =
-		    xe.type == KeyPress ? APP_EVENT_KEYDOWN : APP_EVENT_KEYUP;
-		XAutoRepeatOn(dsp);
-		keysym = XkbKeycodeToKeysym(dsp, xe.xkey.keycode, 0, 1);
-		e.key.code = convert_keycode(keysym);
-		e.key.shift_key = xe.xkey.state & ShiftMask ? TRUE : FALSE;
-		e.key.ctrl_key = xe.xkey.state & ControlMask ? TRUE : FALSE;
-		app_post_event(&e);
-		if (keysym >= XK_space && keysym <= XK_asciitilde &&
-		    e.type == APP_EVENT_KEYDOWN) {
-			e.type = APP_EVENT_KEYPRESS;
-			e.key.code = XkbKeycodeToKeysym(
-			    dsp, xe.xkey.keycode, 0,
-			    xe.xkey.state & ShiftMask ? 1 : 0);
-			app_post_event(&e);
-		}
-		break;
-	case MotionNotify:
-		e.type = APP_EVENT_MOUSEMOVE;
-		e.mouse.x = xe.xmotion.x;
-		e.mouse.y = xe.xmotion.y;
-		app_process_event(&e);
-		break;
-	case ButtonPress:
-		if (xe.xbutton.button == Button4) {
-			e.type = APP_EVENT_WHEEL;
-			e.wheel.delta_y = MOUSE_WHEEL_DELTA;
-		} else if (xe.xbutton.button == Button5) {
-			e.type = APP_EVENT_WHEEL;
-			e.wheel.delta_y = -MOUSE_WHEEL_DELTA;
-		} else {
-			e.type = APP_EVENT_MOUSEDOWN;
-			e.mouse.x = xe.xbutton.x;
-			e.mouse.y = xe.xbutton.y;
-			e.mouse.button = xe.xbutton.button;
-		}
-		app_post_event(&e);
-		break;
-	case ButtonRelease:
-		e.type = APP_EVENT_MOUSEUP;
-		e.mouse.x = xe.xbutton.x;
-		e.mouse.y = xe.xbutton.y;
-		e.mouse.button = xe.xbutton.button;
-		app_post_event(&e);
-		break;
-	case ClientMessage:
-		if (xe.xclient.data.l[0] == x11_app.wm_delete) {
-			// TODO
-		}
-		break;
-	default:
-		break;
-	}
-	app_event_destroy(&e);
-	for (list_each(node, &x11_app.native_listeners)) {
-		listener = node->data;
-		if (listener->type == xe.type) {
-			listener->handler(&xe, listener->data);
-		}
-	}
-	return 1;
-}
-
-static int x11_app_process_native_events(void)
-{
-	while (XEventsQueued(x11_app.display, QueuedAlready)) {
-		x11_app_process_native_event();
-	}
-	return 0;
-}
-
-static int x11_app_add_native_event_listener(int type,
-					     app_event_handler_t handler,
-					     void *data)
-{
-	app_native_event_listener_t *listener;
-
-	listener = malloc(sizeof(app_native_event_listener_t));
-	if (!listener) {
-		return -1;
-	}
-	listener->handler = handler;
-	listener->data = data;
-	listener->type = type;
-	list_append(&x11_app.native_listeners, listener);
-	return 0;
-}
-
-static int x11_app_remove_native_event_listener(int type,
-						app_event_handler_t handler)
-{
-	list_node_t *node, *prev;
-	app_native_event_listener_t *listener;
-
-	for (list_each(node, &x11_app.native_listeners)) {
-		prev = node->prev;
-		listener = node->data;
-		if (listener->handler == handler && listener->type == type) {
-			list_delete_node(&x11_app.native_listeners, node);
-			free(listener);
-			node = prev;
-			return 0;
-		}
-	}
-	return -1;
-}
-
-static void x11_app_get_screen_width(void)
-{
-	Screen *s = DefaultScreenOfDisplay(x11_app.display);
-	return XWidthOfScreen(s);
-}
-
-static int x11_app_get_screen_height(void)
-{
-	Screen *s = DefaultScreenOfDisplay(x11_app.display);
-	return XHeightOfScreen(s);
-}
-
-static void x11_app_window_activate(app_window_t *wnd)
-{
-	XSetWMProtocols(x11_app.display, wnd->handle, &x11_app.wm_delete, 1);
-	XSelectInput(x11_app.display, wnd->handle,
-		     ExposureMask | KeyPressMask | ButtonPress |
-			 StructureNotifyMask | ButtonReleaseMask |
-			 KeyReleaseMask | EnterWindowMask | LeaveWindowMask |
-			 PointerMotionMask | Button1MotionMask |
-			 VisibilityChangeMask);
-	XFlush(x11_app.display);
-	x11_app_window_show(wnd);
-}
-
 static app_window_t *x11_app_window_create(const wchar_t *title, int x, int y,
 					   int width, int height,
 					   app_window_t *parent)
@@ -319,6 +146,185 @@ static void x11_app_window_destroy(app_window_t *wnd)
 		XFreeGC(x11_app.display, wnd->gc);
 	}
 	free(wnd);
+}
+
+static app_window_t *x11_app_get_window_by_handle(void *handle)
+{
+	list_node_t *node;
+
+	for (list_each(node, &x11_app.windows)) {
+		if (&((app_window_t *)node->data)->handle == handle) {
+			return node->data;
+		}
+	}
+	return NULL;
+}
+
+static int x11_app_process_native_event(void)
+{
+	KeySym keysym;
+	Display *dsp = x11_app.display;
+	XEvent xe = { 0 };
+
+	list_node_t *node;
+	app_native_event_listener_t *listener;
+	app_event_t e = { 0 };
+
+	XNextEvent(x11_app.display, &xe);
+	switch (xe.type) {
+	case ConfigureNotify:
+		e.type = APP_EVENT_SIZE;
+		e.window = x11_app_get_window_by_handle(&xe.xconfigure.window);
+		x11_app_window_set_size(e.window, xe.xconfigure.width,
+					xe.xconfigure.height);
+		break;
+	case Expose:
+		e.window = x11_app_get_window_by_handle(&xe.xexpose.window);
+		e.type = APP_EVENT_PAINT;
+		e.paint.rect.x = xe.xexpose.x;
+		e.paint.rect.y = xe.xexpose.y;
+		e.paint.rect.width = xe.xexpose.width;
+		e.paint.rect.height = xe.xexpose.height;
+		app_post_event(&e);
+		break;
+	case KeyPress:
+	case KeyRelease:
+		e.window = x11_app_get_window_by_handle(&xe.xkey.window);
+		e.type =
+		    xe.type == KeyPress ? APP_EVENT_KEYDOWN : APP_EVENT_KEYUP;
+		XAutoRepeatOn(dsp);
+		keysym = XkbKeycodeToKeysym(dsp, xe.xkey.keycode, 0, 1);
+		e.key.code = convert_keycode(keysym);
+		e.key.shift_key = xe.xkey.state & ShiftMask ? TRUE : FALSE;
+		e.key.ctrl_key = xe.xkey.state & ControlMask ? TRUE : FALSE;
+		app_post_event(&e);
+		if (keysym >= XK_space && keysym <= XK_asciitilde &&
+		    e.type == APP_EVENT_KEYDOWN) {
+			e.type = APP_EVENT_KEYPRESS;
+			e.key.code = XkbKeycodeToKeysym(
+			    dsp, xe.xkey.keycode, 0,
+			    xe.xkey.state & ShiftMask ? 1 : 0);
+			app_post_event(&e);
+		}
+		break;
+	case MotionNotify:
+		e.window = x11_app_get_window_by_handle(&xe.xmotion.window);
+		e.type = APP_EVENT_MOUSEMOVE;
+		e.mouse.x = xe.xmotion.x;
+		e.mouse.y = xe.xmotion.y;
+		app_process_event(&e);
+		break;
+	case ButtonPress:
+		e.window = x11_app_get_window_by_handle(&xe.xbutton.window);
+		if (xe.xbutton.button == Button4) {
+			e.type = APP_EVENT_WHEEL;
+			e.wheel.delta_y = MOUSE_WHEEL_DELTA;
+		} else if (xe.xbutton.button == Button5) {
+			e.type = APP_EVENT_WHEEL;
+			e.wheel.delta_y = -MOUSE_WHEEL_DELTA;
+		} else {
+			e.type = APP_EVENT_MOUSEDOWN;
+			e.mouse.x = xe.xbutton.x;
+			e.mouse.y = xe.xbutton.y;
+			e.mouse.button = xe.xbutton.button;
+		}
+		app_post_event(&e);
+		break;
+	case ButtonRelease:
+		e.window = x11_app_get_window_by_handle(&xe.xbutton.window);
+		e.type = APP_EVENT_MOUSEUP;
+		e.mouse.x = xe.xbutton.x;
+		e.mouse.y = xe.xbutton.y;
+		e.mouse.button = xe.xbutton.button;
+		app_post_event(&e);
+		break;
+	case ClientMessage:
+		if (xe.xclient.data.l[0] == x11_app.wm_delete) {
+			// TODO:
+			x11_app_window_destroy(
+			    x11_app_get_window_by_handle(&xe.xclient.window));
+		}
+		break;
+	default:
+		break;
+	}
+	app_event_destroy(&e);
+	for (list_each(node, &x11_app.native_listeners)) {
+		listener = node->data;
+		if (listener->type == xe.type) {
+			listener->handler(&xe, listener->data);
+		}
+	}
+	return 1;
+}
+
+static int x11_app_process_native_events(void)
+{
+	while (XEventsQueued(x11_app.display, QueuedAlready)) {
+		x11_app_process_native_event();
+	}
+	return 0;
+}
+
+static int x11_app_add_native_event_listener(int type,
+					     app_native_event_handler_t handler,
+					     void *data)
+{
+	app_native_event_listener_t *listener;
+
+	listener = malloc(sizeof(app_native_event_listener_t));
+	if (!listener) {
+		return -1;
+	}
+	listener->handler = handler;
+	listener->data = data;
+	listener->type = type;
+	list_append(&x11_app.native_listeners, listener);
+	return 0;
+}
+
+static int x11_app_remove_native_event_listener(
+    int type, app_native_event_handler_t handler)
+{
+	list_node_t *node, *prev;
+	app_native_event_listener_t *listener;
+
+	for (list_each(node, &x11_app.native_listeners)) {
+		prev = node->prev;
+		listener = node->data;
+		if (listener->handler == handler && listener->type == type) {
+			list_delete_node(&x11_app.native_listeners, node);
+			free(listener);
+			node = prev;
+			return 0;
+		}
+	}
+	return -1;
+}
+
+static int x11_app_get_screen_width(void)
+{
+	Screen *s = DefaultScreenOfDisplay(x11_app.display);
+	return XWidthOfScreen(s);
+}
+
+static int x11_app_get_screen_height(void)
+{
+	Screen *s = DefaultScreenOfDisplay(x11_app.display);
+	return XHeightOfScreen(s);
+}
+
+static void x11_app_window_activate(app_window_t *wnd)
+{
+	XSetWMProtocols(x11_app.display, wnd->handle, &x11_app.wm_delete, 1);
+	XSelectInput(x11_app.display, wnd->handle,
+		     ExposureMask | KeyPressMask | ButtonPress |
+			 StructureNotifyMask | ButtonReleaseMask |
+			 KeyReleaseMask | EnterWindowMask | LeaveWindowMask |
+			 PointerMotionMask | Button1MotionMask |
+			 VisibilityChangeMask);
+	XFlush(x11_app.display);
+	x11_app_window_show(wnd);
 }
 
 static void x11_app_window_set_title(app_window_t *wnd, const wchar_t *title)
@@ -399,7 +405,7 @@ static void x11_app_window_set_position(app_window_t *wnd, int x, int y)
 
 static void *x11_app_window_get_handle(app_window_t *wnd)
 {
-	return wnd->handle;
+	return &wnd->handle;
 }
 
 static int x11_app_window_get_width(app_window_t *wnd)
@@ -495,7 +501,7 @@ static void x11_app_present(void)
 	}
 }
 
-static int x11_app_init(void)
+static int x11_app_init(const wchar_t *name)
 {
 	x11_app.display = XOpenDisplay(NULL);
 	if (!x11_app.display) {
@@ -509,9 +515,10 @@ static int x11_app_init(void)
 	return 0;
 }
 
-static void x11_app_destroy(void)
+static int x11_app_destroy(void)
 {
 	XCloseDisplay(x11_app.display);
+	return 0;
 }
 
 void x11_app_driver_init(app_driver_t *driver)
@@ -524,6 +531,8 @@ void x11_app_driver_init(app_driver_t *driver)
 	driver->off_event = x11_app_remove_native_event_listener;
 	driver->create_window = x11_app_window_create;
 	driver->get_window = x11_app_get_window_by_handle;
+	driver->get_screen_width = x11_app_get_screen_width;
+	driver->get_screen_height = x11_app_get_screen_height;
 	driver->present = x11_app_present;
 }
 
@@ -533,6 +542,7 @@ void x11_app_window_driver_init(app_window_driver_t *driver)
 	driver->hide = x11_app_window_hide;
 	driver->activate = x11_app_window_activate;
 	driver->set_title = x11_app_window_set_title;
+	driver->set_position = x11_app_window_set_position;
 	driver->set_size = x11_app_window_set_size;
 	driver->get_width = x11_app_window_get_width;
 	driver->get_height = x11_app_window_get_height;

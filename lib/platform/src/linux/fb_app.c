@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <LCUI/graph.h>
+#include <LCUI/painter.h>
 
 #define MIN_WIDTH 320
 #define MIN_HEIGHT 240
@@ -234,6 +235,18 @@ static void fb_app_window_close(app_window_t *wnd)
 	fbapp.window_count -= 1;
 }
 
+static void fb_app_window_activate(app_window_t *wnd)
+{
+}
+
+static void fb_app_window_show(app_window_t *wnd)
+{
+}
+
+static void fb_app_window_hide(app_window_t *wnd)
+{
+}
+
 static void *fb_app_window_get_handle(app_window_t *wnd)
 {
 	return NULL;
@@ -404,7 +417,7 @@ static void fb_app_present(void)
 {
 }
 
-static void fb_app_init(void)
+static int fb_app_init(const wchar_t *name)
 {
 	fbapp.fb.dev_path = getenv("LCUI_FRAMEBUFFER_DEVICE");
 	if (!fbapp.fb.dev_path) {
@@ -415,7 +428,7 @@ static void fb_app_init(void)
 	fbapp.fb.dev_fd = open(fbapp.fb.dev_path, O_RDWR);
 	if (fbapp.fb.dev_fd == -1) {
 		logger_error("[display] open framebuffer device failed\n");
-		return;
+		return -1;
 	}
 	ioctl(fbapp.fb.dev_fd, FBIOGET_VSCREENINFO, &fbapp.fb.var_info);
 	ioctl(fbapp.fb.dev_fd, FBIOGET_FSCREENINFO, &fbapp.fb.fix_info);
@@ -426,15 +439,20 @@ static void fb_app_init(void)
 			    MAP_SHARED, fbapp.fb.dev_fd, 0);
 	if ((void *)-1 == fbapp.fb.mem) {
 		logger_error("[display] framebuffer mmap failed\n");
-		return;
+		return -2;
 	}
 	fb_app_print_info();
 	fb_app_init_canvas();
 	fb_app_init_root_window();
+	fbapp.active = TRUE;
+	return 0;
 }
 
-static void fb_app_destroy(void)
+static int fb_app_destroy(void)
 {
+	if (!fbapp.active) {
+		return -1;
+	}
 	if (munmap(fbapp.fb.mem, fbapp.fb.mem_len) != 0) {
 		perror("[display] framebuffer munmap failed");
 	}
@@ -449,14 +467,15 @@ static void fb_app_destroy(void)
 	fbapp.fb.mem = NULL;
 	fbapp.fb.mem_len = 0;
 	fbapp.active = FALSE;
+	return 0;
 }
 
-static int fb_app_on_event(int type, app_event_handler_t handler, void *data)
+static int fb_app_on_event(int type, app_native_event_handler_t handler, void *data)
 {
 	return -1;
 }
 
-static int fb_app_off_event(int type, app_event_handler_t handler)
+static int fb_app_off_event(int type, app_native_event_handler_t handler)
 {
 	return -1;
 }
@@ -464,12 +483,12 @@ static int fb_app_off_event(int type, app_event_handler_t handler)
 
 static int fb_app_process_event(void)
 {
-	return 0;
+	return 1;
 }
 
 static int fb_app_process_events(void)
 {
-	return 0;
+	return 1;
 }
 
 void fb_app_driver_init(app_driver_t *driver)
@@ -489,6 +508,10 @@ void fb_app_driver_init(app_driver_t *driver)
 
 void fb_app_window_driver_init(app_window_driver_t *driver)
 {
+	driver->close = fb_app_window_close;
+	driver->show = fb_app_window_show;
+	driver->hide = fb_app_window_hide;
+	driver->activate = fb_app_window_activate;
 	driver->set_title = fb_app_window_set_title;
 	driver->set_size = fb_app_window_set_size;
 	driver->get_width = fb_app_window_get_width;

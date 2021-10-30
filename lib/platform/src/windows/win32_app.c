@@ -608,10 +608,11 @@ void app_quit(void)
 	}
 }
 
-void app_destroy_engine(void)
+int app_destroy_engine(void)
 {
 	UnregisterClassW(win32_app.class_name, win32_app.main_instance);
 	list_destroy_without_node(&win32_app.windows, app_window_destroy);
+	return 0;
 }
 
 #endif

@@ -52,42 +52,6 @@ typedef struct app_event_listener_t {
 	void *data;
 } app_event_listener_t;
 
-typedef struct app_window_driver_t {
-	void (*hide)(app_window_t *);
-	void (*show)(app_window_t *);
-	void (*activate)(app_window_t *);
-	void (*close)(app_window_t *);
-	void (*set_title)(app_window_t *, const wchar_t *);
-	void (*set_size)(app_window_t *, int, int);
-	void (*set_position)(app_window_t *, int, int);
-	void *(*get_handle)(app_window_t *);
-	int (*get_width)(app_window_t *);
-	int (*get_height)(app_window_t *);
-	void (*set_min_width)(app_window_t *, int);
-	void (*set_min_height)(app_window_t *, int);
-	void (*set_max_width)(app_window_t *, int);
-	void (*set_max_height)(app_window_t *, int);
-	app_window_paint_t *(*begin_paint)(app_window_t *, pd_rect_t *);
-	void (*end_paint)(app_window_t *, app_window_paint_t *);
-	void (*present)(app_window_t *);
-} app_window_driver_t;
-
-typedef struct app_driver_t {
-	int (*init)(const wchar_t *);
-	void (*destroy)(void);
-	int (*process_event)(void);
-	int (*process_events)(void);
-	int (*on_event)(int type, app_event_handler_t handler, void *data);
-	int (*off_event)(int type, app_event_handler_t handler);
-	int (*get_screen_width)(void);
-	int (*get_screen_height)(void);
-	app_window_t *(*create_window)(const wchar_t *title, int x, int y,
-				       int width, int height,
-				       app_window_t *parent);
-	app_window_t *(*get_window)(void *handle);
-	void (*present)(void);
-} app_driver_t;
-
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
  */
@@ -275,6 +239,42 @@ typedef struct app_native_event_listener_t {
 	void *data;
 } app_native_event_listener_t;
 
+typedef struct app_window_driver_t {
+	void (*hide)(app_window_t *);
+	void (*show)(app_window_t *);
+	void (*activate)(app_window_t *);
+	void (*close)(app_window_t *);
+	void (*set_title)(app_window_t *, const wchar_t *);
+	void (*set_size)(app_window_t *, int, int);
+	void (*set_position)(app_window_t *, int, int);
+	void *(*get_handle)(app_window_t *);
+	int (*get_width)(app_window_t *);
+	int (*get_height)(app_window_t *);
+	void (*set_min_width)(app_window_t *, int);
+	void (*set_min_height)(app_window_t *, int);
+	void (*set_max_width)(app_window_t *, int);
+	void (*set_max_height)(app_window_t *, int);
+	app_window_paint_t *(*begin_paint)(app_window_t *, pd_rect_t *);
+	void (*end_paint)(app_window_t *, app_window_paint_t *);
+	void (*present)(app_window_t *);
+} app_window_driver_t;
+
+typedef struct app_driver_t {
+	int (*init)(const wchar_t *);
+	int (*destroy)(void);
+	int (*process_event)(void);
+	int (*process_events)(void);
+	int (*on_event)(int type, app_native_event_handler_t handler, void *data);
+	int (*off_event)(int type, app_native_event_handler_t handler);
+	int (*get_screen_width)(void);
+	int (*get_screen_height)(void);
+	app_window_t *(*create_window)(const wchar_t *title, int x, int y,
+				       int width, int height,
+				       app_window_t *parent);
+	app_window_t *(*get_window)(void *handle);
+	void (*present)(void);
+} app_driver_t;
+
 // App events
 
 LCUI_API void app_init_events(void);
@@ -413,7 +413,7 @@ INLINE int app_off_event(int event_type, app_event_handler_t handler)
 // Engine
 
 LCUI_API int app_init_engine(const wchar_t *name);
-LCUI_API void app_destroy_engine(void);
+LCUI_API int app_destroy_engine(void);
 
 // Base
 
