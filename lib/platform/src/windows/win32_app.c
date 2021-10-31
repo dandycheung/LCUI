@@ -15,6 +15,8 @@
 #define WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW | WS_MAXIMIZEBOX)
 #define WM_APP_EVENT (WM_USER + 1000)
 
+const int WM_APP_TICK = WM_USER + 'T' + 'I' + 'C' + 'K';
+
 typedef enum app_window_render_mode_t {
 	RENDER_MODE_STRETCH_BLT,
 	RENDER_MODE_BIT_BLT
@@ -58,6 +60,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID unused)
 	}
 	win32_app.dll_instance = hModule;
 	return TRUE;
+}
+
+int app_post_tick_event(void)
+{
+	return PostMessage(NULL, WM_APP_TICK, NULL, NULL);
 }
 
 int app_process_native_event(void)
@@ -297,6 +304,9 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 		e.type = APP_EVENT_WHEEL;
 		e.wheel.delta_y = GET_WHEEL_DELTA_WPARAM(arg1);
 		e.wheel.delta_mode = APP_WHEEL_DELTA_LINE;
+		break;
+	case WM_APP_TICK:
+		e.type = APP_EVENT_TICK;
 		break;
 #ifdef ENABLE_TOUCH
 	case WM_TOUCH: {

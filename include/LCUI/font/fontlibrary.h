@@ -31,6 +31,10 @@
 #ifndef LCUI_FONT_LIBRARY_H
 #define LCUI_FONT_LIBRARY_H
 
+#include <LCUI/header.h>
+#include <LCUI/graph.h>
+#include <stddef.h>
+
 LCUI_BEGIN_HEADER
 
 typedef enum LCUI_FontStyle {

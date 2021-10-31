@@ -125,6 +125,17 @@ void ui_widget_compute_background(ui_widget_t *w, pd_background_t *out)
 	pd_background_style_t *bg = &w->computed_style.background;
 	float scale, x = 0, y = 0, width, height;
 
+	out->color = bg->color;
+	out->image = bg->image;
+	out->repeat.x = bg->repeat.x;
+	out->repeat.y = bg->repeat.y;
+	if (!bg->image) {
+		out->position.x = 0;
+		out->position.y = 0;
+		out->size.width = 0;
+		out->size.height = 0;
+		return;
+	}
 	/* 计算背景图应有的尺寸 */
 	if (bg->size.using_value) {
 		switch (bg->size.value) {
@@ -266,10 +277,6 @@ void ui_widget_compute_background(ui_widget_t *w, pd_background_t *out)
 		}
 		out->position.y = ui_compute_actual(y, type);
 	}
-	out->color = bg->color;
-	out->image = bg->image;
-	out->repeat.x = bg->repeat.x;
-	out->repeat.y = bg->repeat.y;
 }
 
 void ui_widget_paint_background(ui_widget_t *w, pd_paint_context_t *paint,

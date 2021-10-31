@@ -470,6 +470,11 @@ static int fb_app_destroy(void)
 	return 0;
 }
 
+static int fb_app_post_tick_event(void)
+{
+	return -1;
+}
+
 static int fb_app_on_event(int type, app_native_event_handler_t handler, void *data)
 {
 	return -1;
@@ -495,6 +500,7 @@ void fb_app_driver_init(app_driver_t *driver)
 {
 	driver->init = fb_app_init;
 	driver->destroy = fb_app_destroy;
+	driver->post_tick_event = fb_app_post_tick_event;
 	driver->on_event = fb_app_on_event;
 	driver->off_event = fb_app_off_event;
 	driver->process_event = fb_app_process_event;

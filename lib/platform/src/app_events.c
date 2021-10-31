@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <LCUI/util.h>
-#include <LCUI/platform.h>
+#include <LCUI/thread.h>
+#include "../include/platform.h"
 
 static struct app_events_t {
 	/** list_t<app_event_t> */
@@ -8,6 +9,9 @@ static struct app_events_t {
 
 	/** list_t<app_listener_t> */
 	list_t listeners;
+
+	LCUI_BOOL active;
+	LCUI_Thread tid;
 } app_events;
 
 int app_touch_event_init(app_event_t *e, touch_point_t *points, int n_points)
@@ -43,7 +47,8 @@ int app_event_copy(app_event_t *dest, app_event_t *src)
 {
 	switch (src->type) {
 	case APP_EVENT_TOUCH:
-		return app_touch_event_init(dest, src->touch.points, src->touch.n_points);
+		return app_touch_event_init(dest, src->touch.points,
+					    src->touch.n_points);
 	case APP_EVENT_TEXTINPUT:
 		return app_composition_event_init(dest, src->text.text, 0);
 	default:
@@ -70,7 +75,8 @@ void app_event_destroy(app_event_t *e)
 		e->text.text = NULL;
 		e->text.length = 0;
 		break;
-	default: break;
+	default:
+		break;
 	}
 	e->type = APP_EVENT_NONE;
 }
@@ -89,7 +95,7 @@ int app_post_event(app_event_t *e)
 }
 
 int app_add_event_listener(int event_type, app_event_handler_t handler,
-				   void *data)
+			   void *data)
 {
 	app_event_listener_t *listener;
 
@@ -112,7 +118,8 @@ int app_remove_event_listener(int event_type, app_event_handler_t handler)
 	for (list_each(node, &app_events.listeners)) {
 		prev = node->prev;
 		listener = node->data;
-		if (listener->handler == handler && listener->type == event_type) {
+		if (listener->handler == handler &&
+		    listener->type == event_type) {
 			list_delete_node(&app_events.listeners, node);
 			free(listener);
 			node = prev;
@@ -152,12 +159,28 @@ int app_poll_event(app_event_t *e)
 	return 0;
 }
 
+static void app_events_tick_thread(void *unused)
+{
+	app_event_t e = { 0 };
+
+	e.type = APP_EVENT_TICK;
+	while (app_events.active) {
+		sleep_ms(4);
+		app_post_event(&e);
+	}
+	LCUIThread_Exit(NULL);
+}
+
 void app_init_events(void)
 {
+	LCUIThread_Create(&app_events.tid, app_events_tick_thread, NULL);
+	app_events.active = TRUE;
 	list_create(&app_events.queue);
 }
 
 void app_destroy_events(void)
 {
+	app_events.active = TRUE;
+	LCUIThread_Join(app_events.tid, NULL);
 	list_destroy(&app_events.queue, free);
 }

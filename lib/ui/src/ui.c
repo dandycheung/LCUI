@@ -1,9 +1,10 @@
-﻿#include <LCUI.h>
+﻿#include <LCUI/font.h>
 #include "../include/ui.h"
 #include "internal.h"
 
 void ui_init(void)
 {
+	LCUI_InitFontLibrary();
 	ui_init_metrics();
 	ui_init_widget_id();
 	ui_init_widget_prototype();
@@ -16,6 +17,8 @@ void ui_init(void)
 
 void ui_destroy(void)
 {
+	LCUI_FreeFontLibrary();
+	ui_trash_clear();
 	ui_destroy_root();
 	ui_destroy_events();
 	ui_destroy_image_loader();

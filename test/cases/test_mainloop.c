@@ -8,7 +8,7 @@
 
 static void OnRefreshScreen(void *arg)
 {
-	ui_widget_refresh_style(ui_root());
+	ui_refresh_style();
 }
 
 static void OnQuit(void *arg)
@@ -25,6 +25,7 @@ static void OnBtnClick(ui_widget_t* w, ui_event_t* ui_event, void *arg)
 	while (lcui_get_event(&e) != 0) {
 		lcui_process_event(&e);
 	}
+	lcui_quit();
 }
 
 static void OnTriggerBtnClick(void *arg)

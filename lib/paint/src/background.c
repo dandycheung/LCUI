@@ -49,6 +49,9 @@ void pd_background_paint(const pd_background_t *bg, const pd_rect_t *box,
 	pd_canvas_init(&buffer);
 	pd_canvas_quote(&canvas, &paint->canvas, &rect);
 	pd_canvas_fill_rect(&canvas, bg->color, NULL, TRUE);
+	if (!bg->image) {
+		return;
+	}
 	/* 将坐标转换为相对于背景内容框 */
 	rect.x += paint->rect.x - box->x;
 	rect.y += paint->rect.y - box->y;

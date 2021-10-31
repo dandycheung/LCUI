@@ -18,8 +18,7 @@ typedef enum app_id_t {
 
 typedef enum app_event_type_t {
 	APP_EVENT_NONE,
-	APP_EVENT_TIMER,
-	APP_EVENT_TASK,
+	APP_EVENT_TICK,
 	APP_EVENT_KEYDOWN,
 	APP_EVENT_KEYPRESS,
 	APP_EVENT_KEYUP,
@@ -264,6 +263,7 @@ typedef struct app_window_driver_t {
 typedef struct app_driver_t {
 	int (*init)(const wchar_t *);
 	int (*destroy)(void);
+	int (*post_tick_event)(void);
 	int (*process_event)(void);
 	int (*process_events)(void);
 	int (*on_event)(int type, app_native_event_handler_t handler, void *data);
@@ -393,6 +393,7 @@ LCUI_API int app_touch_event_init(app_event_t *e, touch_point_t *points,
 				  int n_points);
 LCUI_API void app_init_events(void);
 LCUI_API void app_destroy_events(void);
+LCUI_API int app_post_tick_event(void);
 LCUI_API int app_post_event(app_event_t *e);
 LCUI_API int app_process_event(app_event_t *e);
 LCUI_API int app_poll_event(app_event_t *e);

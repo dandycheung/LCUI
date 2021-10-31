@@ -12,6 +12,7 @@ void ui_widget_destroy_prototype(ui_widget_t* widget);
 // Root
 
 void ui_init_root(void);
+void ui_destroy_root(void);
 
 // Base
 

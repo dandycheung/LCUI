@@ -709,7 +709,7 @@ LCUI_API size_t ui_widget_each(ui_widget_t* w,
 			       void (*callback)(ui_widget_t*, void*),
 			       void* arg);
 LCUI_API ui_widget_t* ui_widget_at(ui_widget_t* widget, int ix, int iy);
-LCUI_API void ui_widget_print_tree(ui_widget_t* w);
+LCUI_API void ui_print_tree(ui_widget_t* w);
 
 // Style
 

@@ -1,11 +1,11 @@
-#include <ui.h>
+#include "../include/ui.h"
 
 LCUI_BOOL ui_widget_has_observer(ui_widget_t *widget,
 				 ui_mutation_record_type_t type)
 {
-	ui_widget_t *parent = widget;
+	ui_widget_t *parent;
 
-	while (parent) {
+	for (parent = widget; parent; parent = parent->parent) {
 		if (!parent->extra || parent->extra->observer) {
 			continue;
 		}

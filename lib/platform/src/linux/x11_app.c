@@ -30,7 +30,6 @@ static struct x11_app_t {
 	int screen;
 	Display *display;
 	Window win_root;
-	Window win_main;
 	Atom wm_delete;
 	Colormap cmap;
 
@@ -158,6 +157,19 @@ static app_window_t *x11_app_get_window_by_handle(void *handle)
 		}
 	}
 	return NULL;
+}
+
+static int x11_app_post_tick_event(void)
+{
+	XEvent xe = { 0 };
+
+	xe.xclient.type = ClientMessage;
+	xe.xclient.serial = 0;
+	xe.xclient.send_event = 1;
+	xe.xclient.format = 32;
+	xe.xclient.window = x11_app.win_root;
+	return XSendEvent(x11_app.display, x11_app.win_root, 0, NoEventMask,
+			  &xe);
 }
 
 static int x11_app_process_native_event(void)
@@ -525,6 +537,7 @@ void x11_app_driver_init(app_driver_t *driver)
 {
 	driver->init = x11_app_init;
 	driver->destroy = x11_app_destroy;
+	driver->post_tick_event = x11_app_post_tick_event;
 	driver->process_event = x11_app_process_native_event;
 	driver->process_events = x11_app_process_native_events;
 	driver->on_event = x11_app_add_native_event_listener;

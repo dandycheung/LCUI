@@ -331,7 +331,7 @@ ui_widget_t* ui_widget_at(ui_widget_t* widget, int ix, int iy)
 	return target == widget ? NULL : target;
 }
 
-static void _ui_widget_print_tree(ui_widget_t* w, int depth, const char* prefix)
+static void _ui_print_tree(ui_widget_t* w, int depth, const char* prefix)
 {
 	size_t len;
 	ui_widget_t* child;
@@ -369,11 +369,11 @@ static void _ui_widget_print_tree(ui_widget_t* w, int depth, const char* prefix)
 		    child->padding.left, child->margin.top, child->margin.right,
 		    child->margin.bottom, child->margin.left);
 		SelectorNode_Delete(snode);
-		_ui_widget_print_tree(child, depth + 1, child_prefix);
+		_ui_print_tree(child, depth + 1, child_prefix);
 	}
 }
 
-void ui_widget_print_tree(ui_widget_t* w)
+void ui_print_tree(ui_widget_t* w)
 {
 	LCUI_SelectorNode node;
 	w = w ? w : ui_root();
@@ -382,5 +382,5 @@ void ui_widget_print_tree(ui_widget_t* w)
 		     node->fullname, w->x, w->y, w->width, w->height,
 		     w->computed_style.visible ? "true" : "false");
 	SelectorNode_Delete(node);
-	_ui_widget_print_tree(w, 0, "  ");
+	_ui_print_tree(w, 0, "  ");
 }

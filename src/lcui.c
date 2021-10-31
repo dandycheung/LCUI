@@ -145,15 +145,11 @@ static void lcui_app_on_tick(step_timer_t *timer, void *data)
 
 int lcui_get_event(app_event_t *e)
 {
+	e->type = APP_EVENT_NONE;
+	e->window = NULL;
 	do {
-		if (lcui_process_timers() > 0) {
-			e->type = APP_EVENT_TIMER;
-			e->window = NULL;
-			return 1;
-		}
-		if (LCUIWorker_RunTask(lcui_app.main_worker)) {
-			e->type = APP_EVENT_TASK;
-			e->window = NULL;
+		if (lcui_process_timers() > 0 ||
+		    LCUIWorker_RunTask(lcui_app.main_worker)) {
 			return 1;
 		}
 		if (app_poll_event(e)) {
@@ -170,7 +166,7 @@ int lcui_get_event(app_event_t *e)
 int lcui_process_event(app_event_t *e)
 {
 	app_process_event(e);
-	if (e->type == APP_EVENT_QUIT || e->type == APP_EVENT_NONE) {
+	if (e->type == APP_EVENT_QUIT) {
 		return -1;
 	}
 	lcui_dispatch_ui_event(e);
@@ -185,10 +181,18 @@ int lcui_process_events(void)
 	int ret = 0;
 	app_event_t e = { 0 };
 
+	e.type = APP_EVENT_NONE;
+	app_post_event(&e);
 	while (ret == 0) {
+		lcui_process_timers();
+		if (LCUIWorker_RunTask(lcui_app.main_worker)) {
+			continue;
+		}
 		app_process_native_events();
-		while (app_poll_event(&e)) {
+		if (app_poll_event(&e)) {
 			ret = lcui_process_event(&e);
+		} else {
+			break;
 		}
 	}
 	return ret;
@@ -202,7 +206,6 @@ void lcui_init_base(void)
 #endif
 	lcui_app.exit_code = 0;
 	lcui_print_info();
-	LCUI_InitFontLibrary();
 	lcui_init_timers();
 	lcui_init_ui();
 	lcui_reset_settings();
@@ -219,7 +222,6 @@ int lcui_destroy(void)
 {
 	lcui_destroy_app();
 	lcui_destroy_ui();
-	LCUI_FreeFontLibrary();
 	lcui_destroy_timers();
 	app_destroy();
 	return lcui_app.exit_code;

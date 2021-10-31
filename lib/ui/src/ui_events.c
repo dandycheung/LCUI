@@ -18,6 +18,8 @@ typedef struct ui_touch_capturer_t {
 
 typedef struct ui_event_listener_t {
 	list_node_t node;
+	size_t ref_count;
+	LCUI_BOOL active;
 	int event_id;
 	ui_event_handler_t handler;
 	void *data;
@@ -158,6 +160,7 @@ void ui_event_destroy(ui_event_t* e)
 		e->text.text = NULL;
 		e->text.length = 0;
 		break;
+	default: break;
 	}
 }
 
@@ -217,6 +220,8 @@ static void ui_event_listener_destroy(ui_event_listener_t* listener)
 	if (listener->data && listener->destroy_data) {
 		listener->destroy_data(listener->data);
 	}
+	listener->destroy_data = NULL;
+	listener->handler = NULL;
 	listener->data = NULL;
 	free(listener);
 }
@@ -322,6 +327,8 @@ int ui_widget_add_event_listener(ui_widget_t *w, int event_id,
 	if (!listener) {
 		return -ENOMEM;
 	}
+	listener->ref_count = 0;
+	listener->active = TRUE;
 	listener->handler = handler;
 	listener->data = data;
 	listener->event_id = event_id;
@@ -355,10 +362,13 @@ int ui_widget_remove_event_listener(ui_widget_t *w, int event_id,
 		    (handler && handler != listener->handler)) {
 			continue;
 		}
-		prev = node->prev;
-		list_unlink(&w->extra->listeners, node);
-		ui_event_listener_destroy(listener);
-		node = prev;
+		listener->active = FALSE;
+		if (listener->ref_count == 0) {
+			prev = node->prev;
+			list_unlink(&w->extra->listeners, node);
+			ui_event_listener_destroy(listener);
+			node = prev;
+		}
 		count++;
 	}
 	return count;
@@ -397,7 +407,8 @@ static ui_widget_t *ui_widget_get_next_at(ui_widget_t *widget, float x, float y)
 static int ui_widget_call_listeners(ui_widget_t *w, ui_event_t e, void* arg)
 {
 	int count = 0;
-	list_node_t* node;
+	list_node_t *node;
+	list_node_t *prev;
 	ui_event_listener_t* listener;
 
 	if (!w->extra) {
@@ -408,9 +419,18 @@ static int ui_widget_call_listeners(ui_widget_t *w, ui_event_t e, void* arg)
 		if (listener->event_id != e.type) {
 			continue;
 		}
+		e.data = listener->data;
+		listener->ref_count++;
 		listener->handler(w, &e, arg);
 		if (!e.cancel_bubble && w->parent) {
 			ui_widget_call_listeners(w->parent, e, arg);
+		}
+		listener->ref_count--;
+		if (!listener->active && listener->ref_count < 1) {
+			prev = node->prev;
+			list_unlink(&w->extra->listeners, node);
+			ui_event_listener_destroy(listener);
+			node = prev;
 		}
 		count++;
 	}
@@ -781,7 +801,7 @@ static int ui_on_mouse_event(ui_event_t* origin_event)
 		}
 		ui_events.click.time = get_time_ms();
 		ui_events.click.widget = e.target;
-		ui_clear_mousedown_target(e.target);
+		ui_widget_on_mousedown_event(e.target);
 		ui_set_focus(e.target);
 		break;
 	case UI_EVENT_MOUSEUP:
