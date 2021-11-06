@@ -1,5 +1,6 @@
 #define PREVIEW_MODE
 #include "./cases/test_scrollbar.c"
+#include <LCUI/main.h>
 
 int main(int argc, char **argv)
 {

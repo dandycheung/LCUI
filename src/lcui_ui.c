@@ -1,7 +1,7 @@
 #include <math.h>
 #include <LCUI/util.h>
 #include <LCUI/ui/server.h>
-#include <LCUI/main.h>
+#include <LCUI/app.h>
 #include <LCUI/gui/widget/textview.h>
 #include <LCUI/gui/widget/button.h>
 #include <LCUI/gui/widget/anchor.h>

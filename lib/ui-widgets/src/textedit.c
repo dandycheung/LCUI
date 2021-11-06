@@ -31,8 +31,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <LCUI.h>
 #include <LCUI/thread.h>
+#include <LCUI/platform.h>
 #include <LCUI/graph.h>
 #include <LCUI/font.h>
 #include <LCUI/ui.h>

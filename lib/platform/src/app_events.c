@@ -180,7 +180,7 @@ void app_init_events(void)
 
 void app_destroy_events(void)
 {
-	app_events.active = TRUE;
+	app_events.active = FALSE;
 	LCUIThread_Join(app_events.tid, NULL);
 	list_destroy(&app_events.queue, free);
 }

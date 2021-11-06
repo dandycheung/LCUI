@@ -1,20 +1,25 @@
 includes("lib/ctest/xmake.lua")
+add_rules("mode.debug", "mode.release")
 add_includedirs("lib/ctest/include/")
 add_repositories("local-repo ../build")
-add_requires("lcui")
+add_requires("lcui", {debug = is_mode("debug")})
 add_packages("lcui")
 
 target("helloworld")
+    add_rules("win.sdk.application")
     add_files("helloworld.c")
 
 target("test_block_layout")
+    add_rules("win.sdk.application")
     add_files("test_block_layout.c")
     add_deps("ctest")
 
 target("test_border")
+    add_rules("win.sdk.application")
     add_files("test_border.c")
 
 target("test_box_shadow")
+    add_rules("win.sdk.application")
     add_files("test_box_shadow.c")
 
 target("test_char_render")
@@ -27,6 +32,7 @@ target("test_fill_rect_with_rgba")
     add_files("test_fill_rect_with_rgba.c")
 
 target("test_flex_layout")
+    add_rules("win.sdk.application")
     add_files("test_flex_layout.c")
     add_deps("ctest")
 
@@ -49,12 +55,15 @@ target("test_pixel_manipulation")
     add_files("test_pixel_manipulation.c")
 
 target("test_render")
+    add_rules("win.sdk.application")
     add_files("test_render.c")
 
 target("test_scaling_support")
+    add_rules("win.sdk.application")
     add_files("test_scaling_support.c")
 
 target("test_scrollbar")
+    add_rules("win.sdk.application")
     add_files("test_scrollbar.c")
     add_deps("ctest")
 
@@ -66,12 +75,14 @@ target("test_textview_resize")
     add_deps("ctest")
 
 target("test_touch")
+    add_rules("win.sdk.application")
     add_files("test_touch.c")
 
 target("test_widget")
     add_files("test_widget.c")
 
 target("test_widget_opacity")
+    add_rules("win.sdk.application")
     add_files("test_widget_opacity.c")
     add_deps("ctest")
 

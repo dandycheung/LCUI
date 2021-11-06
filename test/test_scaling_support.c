@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <LCUI.h>
-#include <LCUI/timer.h>
-#include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
+#include <LCUI/main.h>
 
 enum { TYPE_DENSITY, TYPE_SCALED_DENSITY, TYPE_SCALE };
 
@@ -56,16 +55,15 @@ static void InitButtons(void)
 
 int main(int argc, char **argv)
 {
-	ui_widget_t *root, *pack;
+	ui_widget_t *pack;
 
 	lcui_init();
-	root = ui_root();
 	pack = LCUIBuilder_LoadFile("test_scaling_support.xml");
 	if (!pack) {
 		return -1;
 	}
-	ui_widget_update_style(root, TRUE);
-	ui_widget_append(root, pack);
+	ui_refresh_style();
+	ui_root_append(pack);
 	ui_widget_unwrap(pack);
 	InitButtons();
 	return lcui_main();

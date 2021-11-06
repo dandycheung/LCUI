@@ -32,8 +32,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <LCUI.h>
 #include <LCUI/ui.h>
+#include <LCUI/app.h>
 #include <LCUI/gui/widget/anchor.h>
 #include <LCUI/gui/builder.h>
 

@@ -1,4 +1,3 @@
-#include <LCUI.h>
 #include <LCUI/timer.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/widget/textview.h>

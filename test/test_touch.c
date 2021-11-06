@@ -2,8 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <LCUI.h>
 #include <LCUI/ui.h>
+#include <LCUI/main.h>
 #include <LCUI/graph.h>
 
 /** 触点绑定记录 */

@@ -1,9 +1,9 @@
 #include <LCUI.h>
-#include <LCUI/draw/border.h>
-#include <LCUI/ui.h>
-#include <LCUI/gui/builder.h>
 #include <LCUI/graph.h>
 #include <LCUI/image.h>
+#include <LCUI/draw/border.h>
+#include <LCUI/gui/builder.h>
+#include <LCUI/main.h>
 
 int main(void)
 {

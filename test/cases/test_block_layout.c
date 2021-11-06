@@ -1,6 +1,5 @@
 ﻿#include "ctest.h"
 #include <LCUI.h>
-#include <LCUI/ui.h>
 #include <LCUI/gui/builder.h>
 #include <LCUI/gui/widget/textview.h>
 

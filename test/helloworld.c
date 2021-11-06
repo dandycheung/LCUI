@@ -1,5 +1,5 @@
 ﻿#include <LCUI.h>
-#include <LCUI/ui.h>
+#include <LCUI/main.h>
 #include <LCUI/gui/builder.h>
 #include <LCUI/gui/widget/textview.h>
 #include <LCUI/gui/widget/textedit.h>

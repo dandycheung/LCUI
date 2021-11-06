@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <LCUI.h>
-#include <LCUI/ui.h>
+#include <LCUI/main.h>
 #include <LCUI/graph.h>
-#include <LCUI/timer.h>
 #include <LCUI/gui/widget/textview.h>
 
 #define SCREEN_WIDTH 1600
@@ -131,7 +130,7 @@ void InitRenderStatus(void)
 	lcui_set_interval(1000, UpdateRenderStatus, status);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	size_t i;
 	int64_t t;

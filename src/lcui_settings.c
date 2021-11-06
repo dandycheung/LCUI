@@ -27,10 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LCUI.h>
 #include <LCUI/platform.h>
 #include <LCUI/ui.h>
 #include <LCUI/ui/server.h>
+#include <LCUI/app.h>
 
 static lcui_settings_t lcui_settings;
 

@@ -1,10 +1,9 @@
 ﻿#include <stdio.h>
 #include <time.h>
-#include <LCUI.h>
+#include <LCUI/util.h>
 #include <LCUI/font.h>
 #include <LCUI/ui.h>
 #include <LCUI/gui/widget/textview.h>
-#include <yutil.h>
 
 int main(void)
 {

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <LCUI.h>
+#include <LCUI/app.h>
 #include <LCUI/platform.h>
 #include <LCUI/ui.h>
 #include <LCUI/thread.h>

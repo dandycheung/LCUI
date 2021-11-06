@@ -15,7 +15,7 @@
 #define WIN32_WINDOW_STYLE (WS_OVERLAPPEDWINDOW | WS_MAXIMIZEBOX)
 #define WM_APP_EVENT (WM_USER + 1000)
 
-const int WM_APP_TICK = WM_USER + 'T' + 'I' + 'C' + 'K';
+#define WM_APP_TICK (WM_USER + 'T' + 'I' + 'C' + 'K')
 
 typedef enum app_window_render_mode_t {
 	RENDER_MODE_STRETCH_BLT,
@@ -64,7 +64,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID unused)
 
 int app_post_tick_event(void)
 {
-	return PostMessage(NULL, WM_APP_TICK, NULL, NULL);
+	return PostMessage(NULL, WM_APP_TICK, 0, 0);
 }
 
 int app_process_native_event(void)

@@ -1,7 +1,8 @@
 #define PREVIEW_MODE
 #include "./cases/test_textview_resize.c"
+#include <LCUI/main.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	lcui_init();
 
