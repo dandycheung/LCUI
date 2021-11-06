@@ -31,6 +31,8 @@
 #ifndef LCUI_CSS_RULE_FONT_FACE_PARSER_H
 #define LCUI_CSS_RULE_FONT_FACE_PARSER_H
 
+#include <LCUI/font/fontlibrary.h>
+
 typedef struct LCUI_CSSFontFaceRec_ {
 	char *font_family;
 	LCUI_FontStyle font_style;
