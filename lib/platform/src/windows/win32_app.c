@@ -67,25 +67,29 @@ int app_post_tick_event(void)
 	return PostMessage(NULL, WM_APP_TICK, 0, 0);
 }
 
+static DWORD format_error_message(DWORD err, wchar_t **buf)
+{
+	return FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				 FORMAT_MESSAGE_IGNORE_INSERTS |
+				 FORMAT_MESSAGE_FROM_SYSTEM,
+			     NULL, err, LANG_NEUTRAL, buf, 0, NULL);
+}
+
 int app_process_native_event(void)
 {
 	MSG msg;
 	BOOL ret;
 	DWORD err;
-	wchar_t errmsg[256] = { 0 };
+	wchar_t *errmsg;
 	list_node_t *node;
 	app_native_event_listener_t *listener;
 
 	ret = GetMessage(&msg, NULL, 0, 0);
 	if (ret == -1) {
 		err = GetLastError();
-		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-					FORMAT_MESSAGE_IGNORE_INSERTS |
-					FORMAT_MESSAGE_FROM_SYSTEM,
-				NULL, err, LANG_NEUTRAL, errmsg, 256,
-				NULL);
-		logger_error("[win32-app] error %d: %ls\n", err,
-				errmsg);
+		format_error_message(err, &errmsg);
+		logger_error("[win32-app] error %d: %ls\n", err, errmsg);
+		LocalFree(errmsg);
 		return -1;
 	}
 	TranslateMessage(&msg);
@@ -209,7 +213,7 @@ static LRESULT CALLBACK app_window_process(HWND hwnd, UINT msg, WPARAM arg1,
 		break;
 	}
 	case WM_GETMINMAXINFO: {
-		MINMAXINFO *mminfo = (MINMAXINFO*)arg2;
+		MINMAXINFO *mminfo = (MINMAXINFO *)arg2;
 		app_minmaxinfo_event_t *info = &e.minmaxinfo;
 		int style = GetWindowLong(hwnd, GWL_STYLE);
 
@@ -583,7 +587,7 @@ void app_present(void)
 
 int app_init_engine(const wchar_t *name)
 {
-	WNDCLASSW wndclass;
+	WNDCLASSW wndclass = { 0 };
 
 	win32_app.class_name = name;
 	wndclass.cbClsExtra = 0;
@@ -599,8 +603,13 @@ int app_init_engine(const wchar_t *name)
 	    LoadIcon(win32_app.dll_instance, MAKEINTRESOURCE(IDI_LCUI_ICON));
 	if (!RegisterClassW(&wndclass)) {
 		wchar_t str[256];
-		swprintf(str, 255, __FUNCTIONW__ L": error code: %d\n",
-			 GetLastError());
+		wchar_t *msg;
+		DWORD err;
+
+		err = GetLastError();
+		format_error_message(err, &msg);
+		swprintf(str, 255, __FUNCTIONW__ L": error %d: %ls\n", err, msg);
+		LocalFree(msg);
 		MessageBoxW(NULL, str, win32_app.class_name, MB_ICONERROR);
 		return -1;
 	}

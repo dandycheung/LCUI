@@ -5,7 +5,6 @@
 int main(int argc, char **argv)
 {
 	logger_set_level(LOGGER_LEVEL_INFO);
-	lcui_init();
 	test_block_layout();
 	return lcui_main();
 }
